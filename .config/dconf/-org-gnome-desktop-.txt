@@ -48,6 +48,7 @@ gtk-enable-primary-paste=true
 gtk-theme='shell-Dark-Nord'
 icon-theme='Colloid-Nord-Dark'
 scaling-factor=uint32 1
+show-battery-percentage=true
 text-scaling-factor=1.25
 toolbar-style='text'
 toolkit-accessibility=false
