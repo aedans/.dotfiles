@@ -167,6 +167,8 @@
   # Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
   systemd.services."getty@tty1".enable = false;
   systemd.services."autovt@tty1".enable = false;
+  systemd.services."NetworkManager-wait-online".wantedBy = lib.mkForce [ ];
+  systemd.services."docker".wantedBy = lib.mkForce [ ];
 
   system.autoUpgrade.enable = true;
   # system.autoUpgrade.allowReboot = true;
