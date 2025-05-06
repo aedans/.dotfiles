@@ -8,6 +8,7 @@ with lib.hm.gvariant;
     "org/gnome/mutter" = {
       attach-modal-dialogs = false;
       center-new-windows = true;
+      dynamic-workspaces = false;
       edge-tiling = true;
       experimental-features = [ "scale-monitor-framebuffer" ];
     };

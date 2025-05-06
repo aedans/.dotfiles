@@ -61,8 +61,15 @@
 
   programs.steam = {
     enable = true;
+    extraCompatPackages = [ pkgs.proton-ge-bin ];
+    gamescopeSession.enable = true;
     remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
     dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
+  };
+
+  programs.gamescope = {
+    enable = true;
+    capSysNice = true;
   };
 
   # Configure keymap in X11
@@ -72,7 +79,7 @@
   };
 
   # Enable CUPS to print documents.
-  services.printing.enable = true;
+  # services.printing.enable = true;
 
   # Enable sound with pipewire.
   # hardware.pulseaudio.enable = true;
@@ -88,6 +95,11 @@
     # use the example session manager (no others are packaged yet so this is enabled by default,
     # no need to redefine it in your config for now)
     #media-session.enable = true;
+  };
+
+  services.ollama = {
+    enable = true;
+    # loadModels = [ "llama3.1:8b" "qwen2.5-coder:1.5b-base" "nomic-embed-text:latest"];
   };
 
   # Enable touchpad support (enabled default in most desktopManager).
@@ -169,9 +181,6 @@
   systemd.services."autovt@tty1".enable = false;
   systemd.services."NetworkManager-wait-online".wantedBy = lib.mkForce [ ];
   systemd.services."docker".wantedBy = lib.mkForce [ ];
-
-  system.autoUpgrade.enable = true;
-  # system.autoUpgrade.allowReboot = true;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;

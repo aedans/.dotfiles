@@ -85,6 +85,10 @@ with lib.hm.gvariant;
       application-id = "dolphin-emu.desktop";
     };
 
+    "org/gnome/desktop/notifications/application/draw" = {
+      application-id = "draw.desktop";
+    };
+
     "org/gnome/desktop/notifications/application/firefox" = {
       application-id = "firefox.desktop";
     };
@@ -123,6 +127,10 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/notifications/application/org-gnome-fileroller" = {
       application-id = "org.gnome.FileRoller.desktop";
+    };
+
+    "org/gnome/desktop/notifications/application/org-gnome-geary" = {
+      application-id = "org.gnome.Geary.desktop";
     };
 
     "org/gnome/desktop/notifications/application/org-gnome-nautilus" = {
