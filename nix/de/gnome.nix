@@ -20,6 +20,8 @@
   users.users.hans.packages = with pkgs; [
     gnome-terminal
     gnome-tweaks
+    gnomeExtensions.auto-move-windows
+    gnomeExtensions.user-themes
     gnomeExtensions.just-perfection
     gnomeExtensions.dash-to-dock
     gnomeExtensions.vitals
