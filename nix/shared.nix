@@ -29,7 +29,7 @@
   users.extraGroups.vboxusers.members = [ "hans" ];
 
   # boot.kernelPackages = pkgs.linuxPackages_latest;
-  # boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
+  boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
@@ -64,7 +64,10 @@
     extraCompatPackages = [ pkgs.proton-ge-bin ];
     remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
     dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
-    gamescopeSession.enable = true;
+    gamescopeSession = {
+      enable = true;
+      args = [ "--hdr-enabled" "--hdr-itm-enable" ];
+    };
   };
 
   programs.gamescope = {
@@ -190,7 +193,7 @@
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
-    nodejs
+    nodejs_20
     wineWowPackages.stable
     winetricks
     rclone
