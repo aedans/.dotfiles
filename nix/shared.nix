@@ -3,9 +3,13 @@
   imports =
     [ # Include the results of the hardware scan.
       /etc/nixos/hardware-configuration.nix
-      <home-manager/nixos> 
+      <home-manager/nixos>
       ./de/gnome.nix
     ];
+
+  home-manager.users.hans = {
+    home.stateVersion = "24.11";
+  };
 
   nix.settings.experimental-features = [ "flakes" "nix-command" ];
 
@@ -20,7 +24,7 @@
   # Enable networking
   networking.networkmanager.enable = true;
 
-  virtualisation.docker.enable = true;
+  # virtualisation.docker.enable = true;
 
   # virtualisation.vmware.host.enable = true;
 
@@ -145,13 +149,9 @@
       pavucontrol
       lsof
       ollama
+      qemu
+      vulkan-hdr-layer-kwin6
     ];
-  };
-
-  home-manager.users.hans = {
-    # The state version is required and should stay at the version you
-    # originally installed.
-    home.stateVersion = "24.11";
   };
 
   environment.sessionVariables = with pkgs; {
