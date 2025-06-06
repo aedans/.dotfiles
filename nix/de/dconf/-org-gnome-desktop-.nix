@@ -149,6 +149,10 @@ with lib.hm.gvariant;
       application-id = "org.gnome.Totem.desktop";
     };
 
+    "org/gnome/desktop/notifications/application/org-gnome-tweaks" = {
+      application-id = "org.gnome.tweaks.desktop";
+    };
+
     "org/gnome/desktop/notifications/application/org-prismlauncher-prismlauncher" = {
       application-id = "org.prismlauncher.PrismLauncher.desktop";
     };
