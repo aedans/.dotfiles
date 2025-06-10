@@ -3,9 +3,13 @@
   imports =
     [ # Include the results of the hardware scan.
       /etc/nixos/hardware-configuration.nix
-      <home-manager/nixos> 
+      <home-manager/nixos>
       ./de/gnome.nix
     ];
+
+  home-manager.users.hans = {
+    home.stateVersion = "24.11";
+  };
 
   nix.settings.experimental-features = [ "flakes" "nix-command" ];
 
@@ -20,7 +24,7 @@
   # Enable networking
   networking.networkmanager.enable = true;
 
-  virtualisation.docker.enable = true;
+  # virtualisation.docker.enable = true;
 
   # virtualisation.vmware.host.enable = true;
 
@@ -29,7 +33,7 @@
   users.extraGroups.vboxusers.members = [ "hans" ];
 
   # boot.kernelPackages = pkgs.linuxPackages_latest;
-  # boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
+  boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
@@ -62,9 +66,12 @@
   programs.steam = {
     enable = true;
     extraCompatPackages = [ pkgs.proton-ge-bin ];
-    gamescopeSession.enable = true;
     remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
     dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
+    gamescopeSession = {
+      enable = true;
+      args = [ "--hdr-enabled" "--hdr-itm-enable" ];
+    };
   };
 
   programs.gamescope = {
@@ -141,13 +148,10 @@
       icu
       pavucontrol
       lsof
+      ollama
+      qemu
+      vulkan-hdr-layer-kwin6
     ];
-  };
-
-  home-manager.users.hans = {
-    # The state version is required and should stay at the version you
-    # originally installed.
-    home.stateVersion = "24.11";
   };
 
   environment.sessionVariables = with pkgs; {
@@ -188,7 +192,7 @@
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
-    nodejs
+    nodejs_20
     wineWowPackages.stable
     winetricks
     rclone

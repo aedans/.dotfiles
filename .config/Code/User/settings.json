@@ -4,7 +4,6 @@
     "git.confirmSync": false,
     "git.autofetch": true,
     "terminal.integrated.defaultProfile.linux": "fish",
-    "workbench.colorTheme": "Nord Deep",
     "git.openRepositoryInParentFolders": "always",
     "java.import.gradle.java.home": "/run/current-system/sw/lib/openjdk/",
     "java.jdt.ls.java.home": "/run/current-system/sw/lib/openjdk/",
@@ -40,7 +39,5 @@
     "[typescriptreact]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "[javascript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+    "workbench.colorTheme": "Nord Deep"
 }
