@@ -48,7 +48,7 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
-      cursor-size = 32;
+      cursor-size = 36;
       cursor-theme = "Future-cursors";
       enable-animations = true;
       enable-hot-corners = true;
