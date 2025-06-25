@@ -41,6 +41,10 @@ with lib.hm.gvariant;
       secondary-color = "#2f302f";
     };
 
+    "org/gnome/desktop/calendar" = {
+      show-weekdate = false;
+    };
+
     "org/gnome/desktop/input-sources" = {
       sources = [ (mkTuple [ "xkb" "us" ]) ];
       xkb-options = [ "terminate:ctrl_alt_bksp" ];
