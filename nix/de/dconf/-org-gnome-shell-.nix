@@ -9,7 +9,7 @@ with lib.hm.gvariant;
       disable-user-extensions = false;
       disabled-extensions = [ "system-monitor@gnome-shell-extensions.gcampax.github.com" "native-window-placement@gnome-shell-extensions.gcampax.github.com" "windowsNavigator@gnome-shell-extensions.gcampax.github.com" "workspace-indicator@gnome-shell-extensions.gcampax.github.com" "places-menu@gnome-shell-extensions.gcampax.github.com" "drive-menu@gnome-shell-extensions.gcampax.github.com" "window-list@gnome-shell-extensions.gcampax.github.com" "apps-menu@gnome-shell-extensions.gcampax.github.com" ];
       enabled-extensions = [ "user-theme@gnome-shell-extensions.gcampax.github.com" "just-perfection-desktop@just-perfection" "dash-to-dock@micxgx.gmail.com" "auto-move-windows@gnome-shell-extensions.gcampax.github.com" "Vitals@CoreCoding.com" "appindicatorsupport@rgcjonas.gmail.com" ];
-      favorite-apps = [ "firefox.desktop" "org.gnome.Nautilus.desktop" "discord.desktop" "slack.desktop" "code.desktop" "idea-ultimate.desktop" "teams-for-linux.desktop" "steam.desktop" ];
+      favorite-apps = [ "firefox.desktop" "org.gnome.Nautilus.desktop" "discord.desktop" "code.desktop" "idea-community.desktop" "steam.desktop" ];
       last-selected-power-profile = "performance";
       welcome-dialog-last-shown-version = "47.2";
     };
@@ -24,7 +24,7 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/shell/extensions/auto-move-windows" = {
-      application-list = [ "firefox.desktop:1" "discord.desktop:1" "slack.desktop:1" "code.desktop:2" "idea-ultimate.desktop:2" "teams-for-linux.desktop:1" "steam.desktop:3" ];
+      application-list = [ "firefox.desktop:1" "discord.desktop:1" "slack.desktop:1" "code.desktop:2" "idea-community.desktop:2" "teams-for-linux.desktop:1" "steam.desktop:3" ];
     };
 
     "org/gnome/shell/extensions/custom-accent-colors" = {
