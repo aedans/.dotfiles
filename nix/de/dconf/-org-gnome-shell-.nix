@@ -10,7 +10,7 @@ with lib.hm.gvariant;
       disabled-extensions = [ "system-monitor@gnome-shell-extensions.gcampax.github.com" "native-window-placement@gnome-shell-extensions.gcampax.github.com" "windowsNavigator@gnome-shell-extensions.gcampax.github.com" "workspace-indicator@gnome-shell-extensions.gcampax.github.com" "places-menu@gnome-shell-extensions.gcampax.github.com" "drive-menu@gnome-shell-extensions.gcampax.github.com" "window-list@gnome-shell-extensions.gcampax.github.com" "apps-menu@gnome-shell-extensions.gcampax.github.com" ];
       enabled-extensions = [ "user-theme@gnome-shell-extensions.gcampax.github.com" "just-perfection-desktop@just-perfection" "dash-to-dock@micxgx.gmail.com" "auto-move-windows@gnome-shell-extensions.gcampax.github.com" "Vitals@CoreCoding.com" "appindicatorsupport@rgcjonas.gmail.com" ];
       favorite-apps = [ "firefox.desktop" "org.gnome.Nautilus.desktop" "discord.desktop" "code.desktop" "idea-community.desktop" "steam.desktop" ];
-      last-selected-power-profile = "performance";
+      last-selected-power-profile = "power-saver";
       welcome-dialog-last-shown-version = "47.2";
     };
 

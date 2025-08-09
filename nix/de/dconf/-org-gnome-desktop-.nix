@@ -184,6 +184,7 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/peripherals/touchpad" = {
       click-method = "areas";
+      disable-while-typing = false;
       speed = 0.0;
       tap-to-click = true;
       two-finger-scrolling-enabled = true;
