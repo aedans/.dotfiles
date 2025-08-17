@@ -144,6 +144,7 @@
       vulkan-hdr-layer-kwin6
       imagemagick
       networkmanagerapplet
+      obs-studio
     ];
   };
 

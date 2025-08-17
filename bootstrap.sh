@@ -13,6 +13,8 @@ nix-shell -p sassc --command "bash ./Colloid-gtk-theme/install.sh --tweaks nord 
 bash ./Colloid-icon-theme/install.sh --scheme nord
 (cd Future-cursors; bash install.sh)
 
+sudo nix-channel --add https://github.com/nix-community/home-manager/archive/release-25.05.tar.gz home-manager
+
 sudo nixos-rebuild switch --flake .#$1 --impure
 
 nix-shell -p stow --command "stow . --no-folding"
