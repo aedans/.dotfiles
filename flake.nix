@@ -14,8 +14,6 @@
       home-manager,
       ... 
   }@inputs: {
-    # home-manager.sharedModules = [ inputs.plasma-manager.homeManagerModules.plasma-manager ];
-
     nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
