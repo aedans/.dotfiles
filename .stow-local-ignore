@@ -8,6 +8,7 @@
 ^/.gitmodules
 ^/.stow-local-ignore
 ^/bootstrap.sh
+^/compose.yml
 ^/dump-dconf.sh
 ^/dump-kde.sh
 ^/dump-vscode.sh
