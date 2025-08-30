@@ -30,8 +30,6 @@
   users.extraGroups.vboxusers.members = [ "hans" ];
 
   # boot.kernelPackages = pkgs.linuxPackages_6_6;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.kernelParams = [ "kvm.enable_virt_at_load=0" "amdgpu.sg_display=0" "amdgpu.dcdebugmask=0x410" ];
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
