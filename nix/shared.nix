@@ -28,6 +28,7 @@
   virtualisation.virtualbox.host.enable = true;
   virtualisation.virtualbox.host.addNetworkInterface = false;
   users.extraGroups.vboxusers.members = [ "hans" ];
+  boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
 
   # boot.kernelPackages = pkgs.linuxPackages_6_6;
 
