@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, pkgs-unstable, lib, ... }:
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -21,7 +21,8 @@
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
-  # virtualisation.docker.enable = true;
+  virtualisation.docker.enable = true;
+  hardware.nvidia-container-toolkit.enable = true;
 
   # virtualisation.vmware.host.enable = true;
 
@@ -59,6 +60,7 @@
 
   # Enable OpenGL
   hardware.graphics.enable = true;
+  hardware.graphics.extraPackages = with pkgs; [ ocl-icd intel-compute-runtime ];
 
   programs.steam = {
     enable = true;
@@ -131,11 +133,14 @@
       lutris
       prismlauncher
       lynx
-      jdk21
+      pkgs.jdk21
+      pkgs-unstable.javaPackages.compiler.openjdk25
       libreoffice
       dolphin-emu
       postman
       icu
+      ocl-icd
+      intel-compute-runtime
       pavucontrol
       lsof
       ollama
@@ -146,6 +151,10 @@
       obs-studio
     ];
   };
+
+  nixpkgs.config.permittedInsecurePackages = [
+    "mbedtls-2.28.10"
+  ];
 
   environment.sessionVariables = with pkgs; {
     LD_LIBRARY_PATH = lib.makeLibraryPath [
