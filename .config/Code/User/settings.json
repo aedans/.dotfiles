@@ -57,5 +57,6 @@
     },
     "[github-actions-workflow]": {
         "editor.defaultFormatter": "redhat.vscode-yaml"
-    }
+    },
+    "aws.cloudformation.telemetry.enabled": false
 }

@@ -105,6 +105,10 @@ with lib.hm.gvariant;
       application-id = "gnome-system-monitor.desktop";
     };
 
+    "org/gnome/desktop/notifications/application/idea-community" = {
+      application-id = "idea-community.desktop";
+    };
+
     "org/gnome/desktop/notifications/application/idea-ultimate" = {
       application-id = "idea-ultimate.desktop";
     };
