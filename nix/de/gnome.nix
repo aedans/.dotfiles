@@ -1,9 +1,10 @@
 { pkgs, ... }:
 {
-  services.xserver.enable = true;
-  # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.xserver = {
+    enable = true;
+    displayManager.gdm.enable = true;
+    desktopManager.gnome.enable = true;
+  };
 
   environment.gnome.excludePackages = (with pkgs; [
     gnome-text-editor
@@ -25,14 +26,4 @@
     gnomeExtensions.appindicator
     gnomeExtensions.gsconnect
   ];
-
-  home-manager.users.hans = {
-    dconf.enable = true;
-
-    imports = [
-      ./dconf/-org-gnome-desktop-.nix
-      ./dconf/-org-gnome-mutter-.nix
-      ./dconf/-org-gnome-shell-.nix 
-    ];
-  };
 }

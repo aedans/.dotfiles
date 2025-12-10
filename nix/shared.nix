@@ -1,117 +1,11 @@
 { config, pkgs, pkgs-unstable, lib, ... }:
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      /etc/nixos/hardware-configuration.nix
-      <home-manager/nixos>
-      ./de/gnome.nix
-    ];
+  imports = [ 
+    /etc/nixos/hardware-configuration.nix
+    ./de/gnome.nix
+  ];
 
-  home-manager.users.hans = {
-    home.stateVersion = "24.11";
-  };
-
-  nix.settings.experimental-features = [ "flakes" "nix-command" ];
-
-  programs.fish.enable = true;
-
-  networking.networkmanager.enable = true;
-
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-  virtualisation.docker.enable = true;
-  hardware.nvidia-container-toolkit.enable = true;
-
-  # virtualisation.vmware.host.enable = true;
-
-  virtualisation.virtualbox.host.enable = true;
-  virtualisation.virtualbox.host.addNetworkInterface = false;
   users.extraGroups.vboxusers.members = [ "hans" ];
-  boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
-
-  # boot.kernelPackages = pkgs.linuxPackages_6_6;
-
-  # Set your time zone.
-  time.timeZone = "America/Los_Angeles";
-
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_US.UTF-8";
-
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_US.UTF-8";
-    LC_IDENTIFICATION = "en_US.UTF-8";
-    LC_MEASUREMENT = "en_US.UTF-8";
-    LC_MONETARY = "en_US.UTF-8";
-    LC_NAME = "en_US.UTF-8";
-    LC_NUMERIC = "en_US.UTF-8";
-    LC_PAPER = "en_US.UTF-8";
-    LC_TELEPHONE = "en_US.UTF-8";
-    LC_TIME = "en_US.UTF-8";
-  };
-
-  services.syncthing = {
-    enable = true;
-    user = "hans";
-    dataDir = "/home/hans/Sync";    # Default folder for new synced folders
-    configDir = "/home/hans/.config/syncthing";   # Folder for Syncthing's settings and keys
-  };
-
-  # Enable OpenGL
-  hardware.graphics.enable = true;
-  hardware.graphics.extraPackages = with pkgs; [ ocl-icd intel-compute-runtime ];
-
-  programs.steam = {
-    enable = true;
-    extraCompatPackages = [ pkgs.proton-ge-bin ];
-    remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
-    dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
-    gamescopeSession = {
-      enable = true;
-      args = [ "--hdr-enabled" "--hdr-itm-enable" ];
-    };
-  };
-
-  programs.gamescope = {
-    enable = true;
-    capSysNice = true;
-  };
-
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
-  };
-
-  # Enable CUPS to print documents.
-  # services.printing.enable = true;
-
-  # Enable sound with pipewire.
-  # hardware.pulseaudio.enable = true;
-  #security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
-
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
-  };
-
-  services.ollama = {
-    enable = true;
-    # loadModels = [ "llama3.1:8b" "qwen2.5-coder:1.5b-base" "nomic-embed-text:latest"];
-  };
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.hans = {
     isNormalUser = true;
     description = "Hans";
@@ -120,7 +14,6 @@
     packages = with pkgs; [
       firefox
       chromium
-    #  thunderbird
       vscode
       jetbrains.idea-community
       discord
@@ -133,8 +26,8 @@
       lutris
       prismlauncher
       lynx
-      pkgs.jdk21
-      pkgs-unstable.javaPackages.compiler.openjdk25
+      jdk21
+      openjdk25
       libreoffice
       dolphin-emu
       postman
@@ -152,9 +45,91 @@
     ];
   };
 
-  nixpkgs.config.permittedInsecurePackages = [
-    "mbedtls-2.28.10"
+  environment.systemPackages = with pkgs; [
+    nodejs_20
+    wineWowPackages.stable
+    winetricks
+    rclone
   ];
+
+  programs = {
+    fish.enable = true;
+
+    steam = {
+      enable = true;
+      extraCompatPackages = [ pkgs.proton-ge-bin ];
+      remotePlay.openFirewall = true; 
+      dedicatedServer.openFirewall = true;
+      gamescopeSession = {
+        enable = true;
+        args = [ "--hdr-enabled" "--hdr-itm-enable" ];
+      };
+    };
+
+    gamescope = {
+      enable = true;
+      capSysNice = true;
+    };
+
+    java = { 
+      enable = true; 
+      package = pkgs.jdk21;
+    };
+
+    nix-ld = {
+      enable = true;
+      libraries = with pkgs; [ stdenv.cc.cc icu ];
+    };
+  };
+
+  services = {
+    syncthing = {
+      enable = true;
+      user = "hans";
+      dataDir = "/home/hans/Sync";
+      configDir = "/home/hans/.config/syncthing";
+    };
+
+    ollama = {
+      enable = true;
+      # loadModels = [ "llama3.1:8b" "qwen2.5-coder:1.5b-base" "nomic-embed-text:latest"];
+    };
+
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
+    
+    xserver.xkb = {
+      layout = "us";
+      variant = "";
+    };
+  };
+
+  virtualisation = {
+    virtualbox.host.enable = true;
+    virtualbox.host.addNetworkInterface = false;
+    docker.enable = true;
+  };
+
+  networking = {
+    networkmanager.enable = true;
+    # firewall = {
+    #   enable = false;
+    #   allowedTCPPorts = [ 25565 ];
+    #   allowedUDPPorts = [  ];
+    # };
+  };
+
+  hardware = {
+    nvidia-container-toolkit.enable = true;
+    graphics = {
+      enable = true;
+      extraPackages = with pkgs; [ ocl-icd intel-compute-runtime ];
+    };
+  };
 
   environment.sessionVariables = with pkgs; {
     LD_LIBRARY_PATH = lib.makeLibraryPath [
@@ -163,17 +138,23 @@
     ];
   };
 
-  programs.nix-ld.enable = true;
-  programs.nix-ld.libraries = with pkgs; [
-    stdenv.cc.cc
-    icu
-  ];
-
-  programs.java = { 
-    enable = true; 
-    package = pkgs.jdk21;
+  nix = {
+    settings.experimental-features = [ "flakes" "nix-command" ];
+    gc = {
+      automatic = true;
+      randomizedDelaySec = "14m";
+      options = "--delete-older-than 90d";
+    };
   };
 
+  nixpkgs.config = {
+    allowUnfree = true;
+    permittedInsecurePackages = [
+      "mbedtls-2.28.10"
+    ];
+  };
+
+  zramSwap.enable = true;
   swapDevices = [
     {
       device = "/swapfile";
@@ -181,52 +162,27 @@
     }
   ];
 
-  zramSwap.enable = true;
-
-  # Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
-  systemd.services."getty@tty1".enable = false;
-  systemd.services."autovt@tty1".enable = false;
-  systemd.services."docker".wantedBy = lib.mkForce [ ];
-
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
-
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
-  environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
-    nodejs_20
-    wineWowPackages.stable
-    winetricks
-    rclone
-  ];
-
-  nix.gc = {
-    automatic = true;
-    randomizedDelaySec = "14m";
-    options = "--delete-older-than 14d";
+  systemd.services = {
+    "getty@tty1".enable = false;
+    "autovt@tty1".enable = false;
+    "docker".wantedBy = lib.mkForce [ ];
   };
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-  # networking.firewall.allowedTCPPorts = [ 25565 ];
+  time.timeZone = "America/Los_Angeles";
+  i18n = {
+    defaultLocale = "en_US.UTF-8";
+    extraLocaleSettings = {
+      LC_ADDRESS = "en_US.UTF-8";
+      LC_IDENTIFICATION = "en_US.UTF-8";
+      LC_MEASUREMENT = "en_US.UTF-8";
+      LC_MONETARY = "en_US.UTF-8";
+      LC_NAME = "en_US.UTF-8";
+      LC_NUMERIC = "en_US.UTF-8";
+      LC_PAPER = "en_US.UTF-8";
+      LC_TELEPHONE = "en_US.UTF-8";
+      LC_TIME = "en_US.UTF-8";
+    };
+  };
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
@@ -234,6 +190,5 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "24.11"; # Did you read the comment?
-
+  system.stateVersion = "24.11";
 }
