@@ -36,10 +36,8 @@
         ./config/orange.nix
         home-manager.nixosModules.home-manager {
           home-manager.useUserPackages = true;
-          home-manager.users.return12 = {
-            imports = [
-              ./home/shared.nix
-            ];
+          home-manager.users.hans = {
+            imports = [ ./home/shared.nix ];
           };
         }
       ];
@@ -60,10 +58,8 @@
         ./config/framework.nix
         home-manager.nixosModules.home-manager {
           home-manager.useUserPackages = true;
-          home-manager.users.return12 = {
-            imports = [
-              ./home/shared.nix
-            ];
+          home-manager.users.hans = {
+            imports = [ ./home/shared.nix ];
           };
         }
       ];
