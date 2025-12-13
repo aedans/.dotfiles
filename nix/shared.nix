@@ -123,12 +123,9 @@
     # };
   };
 
-  hardware = {
-    nvidia-container-toolkit.enable = true;
-    graphics = {
-      enable = true;
-      extraPackages = with pkgs; [ ocl-icd intel-compute-runtime ];
-    };
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [ ocl-icd intel-compute-runtime ];
   };
 
   environment.sessionVariables = with pkgs; {

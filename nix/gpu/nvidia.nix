@@ -35,4 +35,6 @@
   };
 
   services.ollama.acceleration = "cuda";
+  
+  hardware.nvidia-container-toolkit.enable = true;
 }
