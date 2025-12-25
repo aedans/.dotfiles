@@ -42,6 +42,7 @@
       imagemagick
       networkmanagerapplet
       obs-studio
+      (olympus.override { celesteWrapper = "steam-run"; })
     ];
   };
 
