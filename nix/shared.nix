@@ -36,12 +36,13 @@
       intel-compute-runtime
       pavucontrol
       lsof
-      ollama
+      pkgs-unstable.ollama
       qemu
       vulkan-hdr-layer-kwin6
       imagemagick
       networkmanagerapplet
       obs-studio
+      kdePackages.kdeconnect-kde
       (olympus.override { celesteWrapper = "steam-run"; })
     ];
   };
@@ -117,11 +118,19 @@
 
   networking = {
     networkmanager.enable = true;
-    # firewall = {
-    #   enable = false;
-    #   allowedTCPPorts = [ 25565 ];
-    #   allowedUDPPorts = [  ];
-    # };
+    firewall = {
+      # enable = false;
+      allowedTCPPorts = [ 
+        # KDE Connect
+        1714 1715 1716
+        # Minecraft
+        25565 
+      ];
+      allowedUDPPorts = [
+        # KDE Connect
+        1714 1715 1716 
+      ];
+    };
   };
 
   hardware.graphics = {
