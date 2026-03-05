@@ -15,14 +15,12 @@
       firefox
       chromium
       vscode
-      jetbrains.idea-community
+      jetbrains.idea-oss
       discord
       keepassxc
-      slack
       git
       gh
       python3
-      teams-for-linux
       lutris
       prismlauncher
       lynx
@@ -30,7 +28,6 @@
       openjdk25
       libreoffice
       dolphin-emu
-      postman
       icu
       ocl-icd
       intel-compute-runtime
@@ -43,6 +40,7 @@
       networkmanagerapplet
       obs-studio
       (olympus.override { celesteWrapper = "steam-run"; })
+      lmstudio
     ];
   };
 
