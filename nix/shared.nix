@@ -15,14 +15,12 @@
       firefox
       chromium
       vscode
-      jetbrains.idea-community
+      jetbrains.idea-oss
       discord
       keepassxc
-      slack
       git
       gh
       python3
-      teams-for-linux
       lutris
       prismlauncher
       lynx
@@ -30,13 +28,11 @@
       openjdk25
       libreoffice
       dolphin-emu
-      postman
       icu
       ocl-icd
       intel-compute-runtime
       pavucontrol
       lsof
-      pkgs-unstable.ollama
       qemu
       vulkan-hdr-layer-kwin6
       imagemagick
@@ -44,6 +40,7 @@
       obs-studio
       kdePackages.kdeconnect-kde
       (olympus.override { celesteWrapper = "steam-run"; })
+      pkgs-unstable.lmstudio
     ];
   };
 
@@ -90,11 +87,6 @@
       user = "hans";
       dataDir = "/home/hans/Sync";
       configDir = "/home/hans/.config/syncthing";
-    };
-
-    ollama = {
-      enable = true;
-      # loadModels = [ "llama3.1:8b" "qwen2.5-coder:1.5b-base" "nomic-embed-text:latest"];
     };
 
     pipewire = {
