@@ -1,0 +1,9 @@
+[/]
+attach-modal-dialogs=false
+center-new-windows=true
+dynamic-workspaces=false
+edge-tiling=true
+experimental-features=['scale-monitor-framebuffer']
+
+[wayland]
+xwayland-disable-extension=['Xtest']

@@ -17,6 +17,11 @@ sudo nixos-rebuild switch --flake .#$1 --impure
 
 nix-shell -p stow --command "stow . --no-folding"
 
+for in in /org/gnome/shell/ /org/gnome/desktop/ /org/gnome/mutter/; do
+    echo "Loading ${in} from /home/hans/.dotfiles/nix/de/dconf/${in////-}.nix"
+    dconf load $in < .config/dconf/${in////-}.txt
+done
+
 while read in; do
   echo Installing vscode extension $in
   code --install-extension $in
