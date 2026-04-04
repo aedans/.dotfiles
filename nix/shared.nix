@@ -5,6 +5,21 @@
     ./de/gnome.nix
   ];
 
+  services.searx = {
+    enable = true;
+    redisCreateLocally = true;
+    settings = {
+      server = {
+        bind_address = "::1";
+        port = 8080;
+        secret_key = "your-secret-key";
+      };
+      search = {
+        formats = [ "html" "json" ];  # Enable JSON format
+      };
+    };
+  };
+
   users.extraGroups.vboxusers.members = [ "hans" ];
   users.users.hans = {
     isNormalUser = true;
@@ -33,14 +48,14 @@
       intel-compute-runtime
       pavucontrol
       lsof
-      ollama
       qemu
       vulkan-hdr-layer-kwin6
       imagemagick
       networkmanagerapplet
       obs-studio
+      kdePackages.kdeconnect-kde
       (olympus.override { celesteWrapper = "steam-run"; })
-      lmstudio
+      pkgs-unstable.lmstudio
     ];
   };
 
@@ -89,11 +104,6 @@
       configDir = "/home/hans/.config/syncthing";
     };
 
-    ollama = {
-      enable = true;
-      # loadModels = [ "llama3.1:8b" "qwen2.5-coder:1.5b-base" "nomic-embed-text:latest"];
-    };
-
     pipewire = {
       enable = true;
       alsa.enable = true;
@@ -115,11 +125,19 @@
 
   networking = {
     networkmanager.enable = true;
-    # firewall = {
-    #   enable = false;
-    #   allowedTCPPorts = [ 25565 ];
-    #   allowedUDPPorts = [  ];
-    # };
+    firewall = {
+      # enable = false;
+      allowedTCPPorts = [ 
+        # KDE Connect
+        1714 1715 1716
+        # Minecraft
+        25565 
+      ];
+      allowedUDPPorts = [
+        # KDE Connect
+        1714 1715 1716 
+      ];
+    };
   };
 
   hardware.graphics = {

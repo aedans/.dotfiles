@@ -9,9 +9,8 @@
     gnome-text-editor
     gnome-tour
     gnome-console
-    epiphany    # web browser
-    # geary       # email client
-    seahorse    # password manager
+    epiphany
+    seahorse
   ]);
 
   users.users.hans.packages = with pkgs; [
