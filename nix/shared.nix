@@ -1,8 +1,7 @@
-{ config, pkgs, pkgs-unstable, lib, ... }:
+{ config, pkgs, pkgs-unstable, lib, pkgs-llmster, ... }:
 {
   imports = [ 
     /etc/nixos/hardware-configuration.nix
-    ./de/gnome.nix
   ];
   
   # stylix = {
@@ -24,6 +23,37 @@
       };
     };
   };
+
+  boot.kernelPackages = pkgs.linuxPackages_6_18;
+  
+  # systemd.services.llmster-daemon = {
+  #   description = "LM Studio Daemon";
+  #   wantedBy = [ "multi-user.target" ];
+  #   after = [ "network.target" ];
+  #   serviceConfig = {
+  #     Type = "simple";
+  #     User = "hans";
+  #     Environment = "HOME=/home/hans";
+  #     ExecStart = "${pkgs-llmster.llmster}/bin/llmster";
+  #     Restart = "on-failure";
+  #   };
+  # };
+
+  # systemd.services.llmster-server = {
+  #   description = "LM Studio Server";
+  #   wantedBy = [ "multi-user.target" ];
+  #   after = [ "network.target" "llmster-daemon.service" ];
+  #   requires = [ "llmster-daemon.service" ];
+  #   serviceConfig = {
+  #     Type = "oneshot";
+  #     RemainAfterExit = true;
+  #     User = "hans";
+  #     Environment = "HOME=/home/hans";
+  #     ExecStartPre = "${pkgs.coreutils}/bin/sleep 3";
+  #     ExecStart = "/home/hans/.lmstudio/bin/lms server start";
+  #     ExecStop = "/home/hans/.lmstudio/bin/lms daemon down";
+  #   };
+  # };
 
   users.extraGroups.vboxusers.members = [ "hans" ];
   users.users.hans = {
@@ -61,6 +91,7 @@
       kdePackages.kdeconnect-kde
       (olympus.override { celesteWrapper = "steam-run"; })
       pkgs-unstable.lmstudio
+      pkgs-llmster.llmster
     ];
   };
 

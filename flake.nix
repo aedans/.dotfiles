@@ -8,6 +8,7 @@
       url = "github:nix-community/stylix/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixpkgs-llmster.url = "github:mirkolenz/nixpkgs/llmster";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,8 +19,9 @@
       nixpkgs,
       nixpkgs-unstable,
       stylix,
+      nixpkgs-llmster,
       home-manager,
-      ... 
+      ...
   }@inputs: {
     homeConfigurations.hans = home-manager.lib.homeManagerConfiguration {
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
@@ -42,6 +44,10 @@
               };
             })
           ];
+        };
+        pkgs-llmster = import nixpkgs-llmster {
+          inherit system;
+          config.allowUnfree = true;
         };
       };
 
@@ -75,6 +81,10 @@
               };
             })
           ];
+        };
+        pkgs-llmster = import nixpkgs-llmster {
+          inherit system;
+          config.allowUnfree = true;
         };
       };
 
