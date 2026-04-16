@@ -33,6 +33,15 @@
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
           config.allowUnfree = true;
+          overlays = [
+            (final: prev: {
+              lmstudio = prev.lmstudio.override {
+                version = "0.4.11-1";
+                url = "https://installers.lmstudio.ai/linux/x64/0.4.11-1/LM-Studio-0.4.11-1-x64.AppImage";
+                hash = "sha256-l/WVuU+1muv2HOnOHy2h6/FXibiZpj3nMzGoLFTqZFc=";
+              };
+            })
+          ];
         };
       };
 
@@ -57,6 +66,15 @@
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
           config.allowUnfree = true;
+          overlays = [
+            (final: prev: {
+              lmstudio = prev.lmstudio.override {
+                version = "0.4.11-1";
+                url = "https://installers.lmstudio.ai/linux/x64/0.4.11-1/LM-Studio-0.4.11-1-x64.AppImage";
+                hash = "sha256-l/WVuU+1muv2HOnOHy2h6/FXibiZpj3nMzGoLFTqZFc=";
+              };
+            })
+          ];
         };
       };
 
