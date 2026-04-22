@@ -19,12 +19,15 @@ in
 {
   environment.systemPackages = [ 
     (pkgs-unstable.llama-cpp.override { cudaSupport = true; })
+    pkgs.nodejs
+    pkgs.uv
   ];
 
   systemd.services.mcp-proxy = {
     description = "MCP proxy for llama-server";
     wantedBy    = [ "multi-user.target" ];
     after       = [ "network.target" ];
+    path = [ pkgs.bash pkgs.nodejs pkgs.uv ]; 
     serviceConfig = {
       ExecStart = ''
         ${pkgs.uv}/bin/uvx mcp-proxy \
