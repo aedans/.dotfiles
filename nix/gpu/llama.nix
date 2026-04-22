@@ -2,11 +2,40 @@
 
 let
   ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-IQ3_XXS.gguf";
+  mcpConfig = pkgs.writeText "mcp-config.json" (builtins.toJSON {
+    mcpServers = {
+      searxng = {
+        command = "${pkgs.nodejs}/bin/npx";
+        args    = [ "-y" "mcp-searxng" ];
+        env     = { SEARXNG_URL = "http://localhost:8081"; };
+      };
+      nixos = {
+        command = "${pkgs.uv}/bin/uvx";
+        args    = [ "mcp-nixos" ];
+      };
+    };
+  });
 in
 {
   environment.systemPackages = [ 
     (pkgs-unstable.llama-cpp.override { cudaSupport = true; })
   ];
+
+  systemd.services.mcp-proxy = {
+    description = "MCP proxy for llama-server";
+    wantedBy    = [ "multi-user.target" ];
+    after       = [ "network.target" ];
+    serviceConfig = {
+      ExecStart = ''
+        ${pkgs.uv}/bin/uvx mcp-proxy \
+          --named-server-config ${mcpConfig} \
+          --allow-origin "*" \
+          --port 8001 \
+          --stateless
+      '';
+      Restart = "on-failure";
+    };
+  };
 
   systemd.services.llama-server = {
     description = "llama-server - Qwen3.6 IQ3_XXS";
@@ -22,6 +51,7 @@ in
           --n-gpu-layers   999 \
           --ctx-size       32768 \
           --chat-template-kwargs '{"preserve_thinking": true}'
+          --webui-mcp-proxy \
       '';
       Restart        = "on-failure";
       StateDirectory = "llama";

@@ -108,7 +108,7 @@
       settings = {
         server = {
           bind_address = "::1";
-          port = 8080;
+          port = 8081;
           secret_key = "your-secret-key";
         };
         search = {
