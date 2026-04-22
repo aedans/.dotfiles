@@ -31,6 +31,7 @@ in
 
   services.open-webui = {
     enable = true;
+    host = "0.0.0.0";
     port = 3000;
     package  = pkgs-unstable.open-webui;
     environment = {
