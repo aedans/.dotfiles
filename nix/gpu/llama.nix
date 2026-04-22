@@ -50,8 +50,8 @@ in
           --port           8080 \
           --n-gpu-layers   999 \
           --ctx-size       32768 \
-          --chat-template-kwargs '{"preserve_thinking": true}'
-          --webui-mcp-proxy \
+          --chat-template-kwargs '{"preserve_thinking": true}' \
+          --webui-mcp-proxy 
       '';
       Restart        = "on-failure";
       StateDirectory = "llama";
