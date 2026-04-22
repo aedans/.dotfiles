@@ -29,18 +29,5 @@ in
     };
   };
 
-  services.open-webui = {
-    enable = true;
-    host = "0.0.0.0";
-    port = 3000;
-    package  = pkgs-unstable.open-webui;
-    environment = {
-      OLLAMA_API_BASE_URL = "http://disabled";   # disable ollama
-      OPENAI_API_BASE_URL = "http://127.0.0.1:8080/v1";
-      OPENAI_API_KEY      = "not-needed";        # llama-server doesn't auth
-      WEBUI_AUTH          = "false";             # skip login for local use
-    };
-  };
-
-  networking.firewall.allowedTCPPorts = [ 3000 8080 ];
+  networking.firewall.allowedTCPPorts = [ 8080 ];
 }
