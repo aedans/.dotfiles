@@ -111,8 +111,19 @@
           port = 8081;
           secret_key = "your-secret-key";
         };
+        outgoing = {
+          request_timeout     = 3.0;
+          max_request_timeout = 10.0;
+          pool_connections    = 100;
+          pool_maxsize        = 10;
+          delay              = 1.5;  # seconds between requests per engine
+        };
         search = {
           formats = [ "html" "json" ];  # Enable JSON format
+          cache = {
+            enable = true;
+            ttl    = 86400;  # 24 hours
+          };
         };
       };
     };
