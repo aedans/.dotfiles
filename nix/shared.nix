@@ -90,14 +90,9 @@
       pulse.enable = true;
     };
 
-    tailscale.enable = true;
-
-    openssh = {
+    tailscale = {
       enable = true;
-      settings = {
-        PasswordAuthentication = false;
-        PermitRootLogin = "no";
-      };
+      extraUpFlags = [ "--ssh" ];
     };
 
     syncthing = {
@@ -188,11 +183,6 @@
     "getty@tty1".enable = false;
     "autovt@tty1".enable = false;
     "docker".wantedBy = lib.mkForce [ ];
-
-    sshd = {
-      after   = [ "tailscaled.service" "tailscale-autoconnect.service" ];
-      wants   = [ "tailscaled.service" ];
-    };
   };
 
   time.timeZone = "America/Los_Angeles";
