@@ -53,7 +53,7 @@ toolbar-style='text'
 toolkit-accessibility=false
 
 [notifications]
-application-children=['org-gnome-console', 'code', 'firefox', 'org-gnome-nautilus', 'teams-for-linux', 'discord', 'dolphin-emu', 'slack', 'steam', 'net-lutris-lutris', 'gnome-power-panel', 'org-gnome-totem', 'idea-ultimate', 'lm-studio']
+application-children=['org-gnome-console', 'code', 'firefox', 'org-gnome-nautilus', 'teams-for-linux', 'discord', 'dolphin-emu', 'slack', 'steam', 'net-lutris-lutris', 'gnome-power-panel', 'org-gnome-totem', 'idea-ultimate', 'lm-studio', 'org-gnome-baobab']
 show-banners=true
 
 [notifications/application/code]
@@ -119,9 +119,6 @@ application-id='org.gnome.Nautilus.desktop'
 [notifications/application/org-gnome-settings]
 application-id='org.gnome.Settings.desktop'
 
-[notifications/application/org-gnome-terminal]
-application-id='org.gnome.Terminal.desktop'
-
 [notifications/application/org-gnome-totem]
 application-id='org.gnome.Totem.desktop'
 
@@ -186,20 +183,12 @@ move-to-workspace-1=['<Shift><Alt>1']
 move-to-workspace-2=['<Shift><Alt>2']
 move-to-workspace-3=['<Shift><Alt>3']
 move-to-workspace-4=['<Shift><Alt>4']
-move-to-workspace-down=['<Control><Shift><Alt>Down']
-move-to-workspace-left=['<Super><Shift>KP_Prior', '<Super><Shift><Alt>Left', '<Control><Shift><Alt>Left', '<Super><Shift>Page_Up']
-move-to-workspace-right=['<Super><Shift>KP_Next', '<Super><Shift><Alt>Right', '<Control><Shift><Alt>Right', '<Super><Shift>Page_Down']
-move-to-workspace-up=['<Control><Shift><Alt>Up']
 switch-applications=@as []
 switch-applications-backward=@as []
 switch-to-workspace-1=['<Alt>1']
 switch-to-workspace-2=['<Alt>2']
 switch-to-workspace-3=['<Alt>3']
 switch-to-workspace-4=['<Alt>4']
-switch-to-workspace-down=['<Control><Alt>Down']
-switch-to-workspace-left=['<Super>KP_Prior', '<Super><Alt>Left', '<Control><Alt>Left', '<Super>Page_Up']
-switch-to-workspace-right=['<Super>KP_Next', '<Super><Alt>Right', '<Control><Alt>Right', '<Super>Page_Down']
-switch-to-workspace-up=['<Control><Alt>Up']
 switch-windows=['<Alt>Tab']
 switch-windows-backward=['<Shift><Alt>Tab']
 
