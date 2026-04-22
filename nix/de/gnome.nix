@@ -23,5 +23,6 @@
     gnomeExtensions.vitals
     gnomeExtensions.appindicator
     gnomeExtensions.gsconnect
+    gnomeExtensions.tailscale-status
   ];
 }

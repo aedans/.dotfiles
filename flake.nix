@@ -8,7 +8,6 @@
       url = "github:nix-community/stylix/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixpkgs-llmster.url = "github:mirkolenz/nixpkgs/llmster";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -19,7 +18,6 @@
       nixpkgs,
       nixpkgs-unstable,
       stylix,
-      nixpkgs-llmster,
       home-manager,
       ...
   }@inputs: {
@@ -38,16 +36,12 @@
           overlays = [
             (final: prev: {
               lmstudio = prev.lmstudio.override {
-                version = "0.4.11-1";
-                url = "https://installers.lmstudio.ai/linux/x64/0.4.11-1/LM-Studio-0.4.11-1-x64.AppImage";
-                hash = "sha256-l/WVuU+1muv2HOnOHy2h6/FXibiZpj3nMzGoLFTqZFc=";
+                version = "0.4.12-1";
+                url = "https://installers.lmstudio.ai/linux/x64/0.4.12-1/LM-Studio-0.4.12-1-x64.AppImage";
+                hash = "sha256-U7TJkMUqmL4Wk77zcIN2/4IFz7artvVg0saREjoGy8I=";
               };
             })
           ];
-        };
-        pkgs-llmster = import nixpkgs-llmster {
-          inherit system;
-          config.allowUnfree = true;
         };
       };
 
@@ -75,16 +69,12 @@
           overlays = [
             (final: prev: {
               lmstudio = prev.lmstudio.override {
-                version = "0.4.11-1";
-                url = "https://installers.lmstudio.ai/linux/x64/0.4.11-1/LM-Studio-0.4.11-1-x64.AppImage";
-                hash = "sha256-l/WVuU+1muv2HOnOHy2h6/FXibiZpj3nMzGoLFTqZFc=";
+                version = "0.4.12-1";
+                url = "https://installers.lmstudio.ai/linux/x64/0.4.12-1/LM-Studio-0.4.12-1-x64.AppImage";
+                hash = "sha256-U7TJkMUqmL4Wk77zcIN2/4IFz7artvVg0saREjoGy8I=";
               };
             })
           ];
-        };
-        pkgs-llmster = import nixpkgs-llmster {
-          inherit system;
-          config.allowUnfree = true;
         };
       };
 

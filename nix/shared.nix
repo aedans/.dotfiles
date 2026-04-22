@@ -9,52 +9,8 @@
   #   base16Scheme = "${pkgs.base16-schemes}/share/themes/nord.yaml";
   # };
 
-  services.searx = {
-    enable = true;
-    redisCreateLocally = true;
-    settings = {
-      server = {
-        bind_address = "::1";
-        port = 8080;
-        secret_key = "your-secret-key";
-      };
-      search = {
-        formats = [ "html" "json" ];  # Enable JSON format
-      };
-    };
-  };
-
   boot.kernelPackages = pkgs.linuxPackages_6_18;
   
-  # systemd.services.llmster-daemon = {
-  #   description = "LM Studio Daemon";
-  #   wantedBy = [ "multi-user.target" ];
-  #   after = [ "network.target" ];
-  #   serviceConfig = {
-  #     Type = "simple";
-  #     User = "hans";
-  #     Environment = "HOME=/home/hans";
-  #     ExecStart = "${pkgs-llmster.llmster}/bin/llmster";
-  #     Restart = "on-failure";
-  #   };
-  # };
-
-  # systemd.services.llmster-server = {
-  #   description = "LM Studio Server";
-  #   wantedBy = [ "multi-user.target" ];
-  #   after = [ "network.target" "llmster-daemon.service" ];
-  #   requires = [ "llmster-daemon.service" ];
-  #   serviceConfig = {
-  #     Type = "oneshot";
-  #     RemainAfterExit = true;
-  #     User = "hans";
-  #     Environment = "HOME=/home/hans";
-  #     ExecStartPre = "${pkgs.coreutils}/bin/sleep 3";
-  #     ExecStart = "/home/hans/.lmstudio/bin/lms server start";
-  #     ExecStop = "/home/hans/.lmstudio/bin/lms daemon down";
-  #   };
-  # };
-
   users.extraGroups.vboxusers.members = [ "hans" ];
   users.users.hans = {
     isNormalUser = true;
@@ -87,11 +43,9 @@
       vulkan-hdr-layer-kwin6
       imagemagick
       networkmanagerapplet
-      obs-studio
       kdePackages.kdeconnect-kde
       (olympus.override { celesteWrapper = "steam-run"; })
       pkgs-unstable.lmstudio
-      pkgs-llmster.llmster
     ];
   };
 
@@ -110,15 +64,6 @@
       extraCompatPackages = [ pkgs.proton-ge-bin ];
       remotePlay.openFirewall = true; 
       dedicatedServer.openFirewall = true;
-      gamescopeSession = {
-        enable = true;
-        args = [ "--hdr-enabled" "--hdr-itm-enable" ];
-      };
-    };
-
-    gamescope = {
-      enable = true;
-      capSysNice = true;
     };
 
     java = { 
@@ -133,11 +78,9 @@
   };
 
   services = {
-    syncthing = {
-      enable = true;
-      user = "hans";
-      dataDir = "/home/hans/Sync";
-      configDir = "/home/hans/.config/syncthing";
+    xserver.xkb = {
+      layout = "us";
+      variant = "";
     };
 
     pipewire = {
@@ -146,10 +89,37 @@
       alsa.support32Bit = true;
       pulse.enable = true;
     };
-    
-    xserver.xkb = {
-      layout = "us";
-      variant = "";
+
+    tailscale.enable = true;
+
+    openssh = {
+      enable = true;
+      settings = {
+        PasswordAuthentication = false;
+        PermitRootLogin = "no";
+      };
+    };
+
+    syncthing = {
+      enable = true;
+      user = "hans";
+      dataDir = "/home/hans/Sync";
+      configDir = "/home/hans/.config/syncthing";
+    };
+
+    searx = {
+      enable = true;
+      redisCreateLocally = true;
+      settings = {
+        server = {
+          bind_address = "::1";
+          port = 8080;
+          secret_key = "your-secret-key";
+        };
+        search = {
+          formats = [ "html" "json" ];  # Enable JSON format
+        };
+      };
     };
   };
 
@@ -163,6 +133,7 @@
     networkmanager.enable = true;
     firewall = {
       # enable = false;
+      trustedInterfaces     = [ "tailscale0" ];
       allowedTCPPorts = [ 
         # KDE Connect
         1714 1715 1716
@@ -172,6 +143,7 @@
       allowedUDPPorts = [
         # KDE Connect
         1714 1715 1716 
+        config.services.tailscale.port
       ];
     };
   };
@@ -216,6 +188,11 @@
     "getty@tty1".enable = false;
     "autovt@tty1".enable = false;
     "docker".wantedBy = lib.mkForce [ ];
+
+    sshd = {
+      after   = [ "tailscaled.service" "tailscale-autoconnect.service" ];
+      wants   = [ "tailscaled.service" ];
+    };
   };
 
   time.timeZone = "America/Los_Angeles";

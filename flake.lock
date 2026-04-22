@@ -177,29 +177,13 @@
         "type": "github"
       }
     },
-    "nixpkgs-llmster": {
-      "locked": {
-        "lastModified": 1772055173,
-        "narHash": "sha256-w+o8sK4E4FoG97eJ6lWNDH/gkhjHb4CnZOQLSVeU4A0=",
-        "owner": "mirkolenz",
-        "repo": "nixpkgs",
-        "rev": "a9a048bc4aa741c8cbe519c7c33d06821af53e83",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mirkolenz",
-        "ref": "llmster",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1776169885,
-        "narHash": "sha256-l/iNYDZ4bGOAFQY2q8y5OAfBBtrDAaPuRQqWaFHVRXM=",
+        "lastModified": 1776548001,
+        "narHash": "sha256-ZSK0NL4a1BwVbbTBoSnWgbJy9HeZFXLYQizjb2DPF24=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "4bd9165a9165d7b5e33ae57f3eecbcb28fb231c9",
+        "rev": "b12141ef619e0a9c1c84dc8c684040326f27cdcc",
         "type": "github"
       },
       "original": {
@@ -238,7 +222,6 @@
       "inputs": {
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-llmster": "nixpkgs-llmster",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "stylix": "stylix"
       }
