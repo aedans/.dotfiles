@@ -112,11 +112,11 @@
           secret_key = "your-secret-key";
         };
         outgoing = {
-          request_timeout     = 3.0;
-          max_request_timeout = 10.0;
-          pool_connections    = 100;
-          pool_maxsize        = 10;
-          delay              = 1.5;  # seconds between requests per engine
+          request_timeout     = 2.0;
+          max_request_timeout = 6.0;
+          pool_connections    = 10;   # was 100 — fewer simultaneous connections
+          pool_maxsize        = 3;    # was 10 — tighter pool per host
+          delay              = 4.5;   # was 1.5 — 3x longer between requests per engine
         };
         search = {
           formats = [ "html" "json" ];  # Enable JSON format
