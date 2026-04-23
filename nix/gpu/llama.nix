@@ -34,8 +34,6 @@ in
           --named-server-config ${mcpConfig} \
           --allow-origin "*" \
           --port 8001 \
-          --reasoning-budget 4096 \
-          --reasoning-budget-message "... thinking budget exceeded, let's answer now." \
           --stateless
       '';
       Restart = "on-failure";
@@ -55,6 +53,8 @@ in
           --port           8080 \
           --n-gpu-layers   999 \
           --ctx-size       32768 \
+          --reasoning-budget 4096 \
+          --reasoning-budget-message "... thinking budget exceeded, let's answer now." \
           --chat-template-kwargs '{"preserve_thinking": true}' \
           --webui-mcp-proxy 
       '';
