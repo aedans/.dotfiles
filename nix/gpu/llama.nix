@@ -1,7 +1,7 @@
 { config, pkgs, pkgs-unstable, ... }:
 
 let
-  ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-IQ3_XXS.gguf";
+  ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-IQ3_XXS.gguf";
   mcpConfig = pkgs.writeText "mcp-config.json" (builtins.toJSON {
     mcpServers = {
       searxng = {
@@ -41,7 +41,7 @@ in
   };
 
   systemd.services.llama-server = {
-    description = "llama-server - Qwen3.6 IQ3_XXS";
+    description = "llama-server";
     wantedBy    = [ "multi-user.target" ];
     after       = [ "network.target" ];
 
