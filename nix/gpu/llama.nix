@@ -1,6 +1,7 @@
 { config, pkgs, pkgs-unstable, ... }:
 
 let
+  # ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-IQ3_XXS.gguf";
   ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-IQ3_XXS.gguf";
   mcpConfig = pkgs.writeText "mcp-config.json" (builtins.toJSON {
     mcpServers = {
@@ -53,6 +54,9 @@ in
           --port           8080 \
           --n-gpu-layers   999 \
           --ctx-size       32768 \
+          --cache-type-k   q4_0 \
+          --cache-type-v   q4_0 \
+          --flash-attn     on \
           --reasoning-budget 4096 \
           --reasoning-budget-message "... thinking budget exceeded, let's answer now." \
           --chat-template-kwargs '{"preserve_thinking": true}' \
