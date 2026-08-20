@@ -12,6 +12,12 @@
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      # llm-agents pins nixpkgs (25.11-era), which is required for its
+      # packages to evaluate (e.g. pnpm_11); following our nixpkgs here breaks it.
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
   };
 
   outputs = { 
@@ -19,6 +25,7 @@
       nixpkgs-unstable,
       stylix,
       home-manager,
+      llm-agents,
       ...
   }@inputs: {
     homeConfigurations.hans = home-manager.lib.homeManagerConfiguration {
@@ -33,16 +40,8 @@
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
           config.allowUnfree = true;
-          overlays = [
-            (final: prev: {
-              lmstudio = prev.lmstudio.override {
-                version = "0.4.12-1";
-                url = "https://installers.lmstudio.ai/linux/x64/0.4.12-1/LM-Studio-0.4.12-1-x64.AppImage";
-                hash = "sha256-U7TJkMUqmL4Wk77zcIN2/4IFz7artvVg0saREjoGy8I=";
-              };
-            })
-          ];
         };
+        pkgs-llm-agents = llm-agents.packages.${system};
       };
 
       system = "x86_64-linux";
@@ -66,16 +65,8 @@
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
           config.allowUnfree = true;
-          overlays = [
-            (final: prev: {
-              lmstudio = prev.lmstudio.override {
-                version = "0.4.12-1";
-                url = "https://installers.lmstudio.ai/linux/x64/0.4.12-1/LM-Studio-0.4.12-1-x64.AppImage";
-                hash = "sha256-U7TJkMUqmL4Wk77zcIN2/4IFz7artvVg0saREjoGy8I=";
-              };
-            })
-          ];
         };
+        pkgs-llm-agents = llm-agents.packages.${system};
       };
 
       system = "x86_64-linux";

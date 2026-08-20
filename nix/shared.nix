@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-unstable, lib, pkgs-llmster, ... }:
+{ config, pkgs, pkgs-unstable, lib, pkgs-llmster, pkgs-llm-agents, ... }:
 {
   imports = [ 
     /etc/nixos/hardware-configuration.nix
@@ -46,6 +46,7 @@
       kdePackages.kdeconnect-kde
       (olympus.override { celesteWrapper = "steam-run"; })
       pkgs-unstable.lmstudio
+      pkgs-llm-agents.dsh
     ];
   };
 
@@ -177,6 +178,7 @@
     allowUnfree = true;
     permittedInsecurePackages = [
       "mbedtls-2.28.10"
+      "docker-28.5.2"
     ];
   };
 
