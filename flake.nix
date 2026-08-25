@@ -2,14 +2,15 @@
   description = "A simple NixOS flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     stylix = {
-      url = "github:nix-community/stylix/release-25.11";
+      url = "github:nix-community/stylix/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     llm-agents = {
@@ -26,6 +27,7 @@
       stylix,
       home-manager,
       llm-agents,
+      chaotic,
       ...
   }@inputs: {
     homeConfigurations.hans = home-manager.lib.homeManagerConfiguration {
@@ -48,6 +50,7 @@
 
       modules = [
         stylix.nixosModules.stylix
+        chaotic.nixosModules.default
         ./config/orange.nix
         home-manager.nixosModules.home-manager {
           home-manager.useUserPackages = true;
@@ -73,6 +76,7 @@
       
       modules = [
         stylix.nixosModules.stylix
+        chaotic.nixosModules.default
         ./config/framework.nix
         home-manager.nixosModules.home-manager {
           home-manager.useUserPackages = true;

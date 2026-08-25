@@ -10,7 +10,7 @@
   # };
 
   boot.kernelPackages = pkgs.linuxPackages_6_18;
-  
+
   users.extraGroups.vboxusers.members = [ "hans" ];
   users.users.hans = {
     isNormalUser = true;
@@ -21,7 +21,7 @@
       firefox
       chromium
       vscode
-      jetbrains.idea-oss
+      jetbrains.idea
       discord
       keepassxc
       git
@@ -51,8 +51,8 @@
   };
 
   environment.systemPackages = with pkgs; [
-    nodejs_20
-    wineWowPackages.stable
+    pkgs.protontricks
+    wineWow64Packages.stable
     winetricks
     rclone
   ];
@@ -62,7 +62,7 @@
 
     steam = {
       enable = true;
-      extraCompatPackages = [ pkgs.proton-ge-bin ];
+      extraCompatPackages = [ pkgs.proton-ge-bin pkgs.proton-cachyos ];
       remotePlay.openFirewall = true; 
       dedicatedServer.openFirewall = true;
     };

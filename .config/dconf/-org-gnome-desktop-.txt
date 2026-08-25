@@ -54,7 +54,7 @@ toolbar-style='text'
 toolkit-accessibility=false
 
 [notifications]
-application-children=['org-gnome-console', 'code', 'firefox', 'org-gnome-nautilus', 'teams-for-linux', 'discord', 'dolphin-emu', 'slack', 'steam', 'net-lutris-lutris', 'gnome-power-panel', 'org-gnome-totem', 'idea-ultimate', 'lm-studio', 'org-gnome-baobab']
+application-children=['org-gnome-console', 'code', 'firefox', 'org-gnome-nautilus', 'teams-for-linux', 'discord', 'dolphin-emu', 'slack', 'steam', 'net-lutris-lutris', 'gnome-power-panel', 'org-gnome-totem', 'idea', 'lm-studio', 'org-gnome-baobab']
 show-banners=true
 
 [notifications/application/code]
@@ -83,12 +83,6 @@ application-id='gnome-power-panel.desktop'
 
 [notifications/application/gnome-system-monitor]
 application-id='gnome-system-monitor.desktop'
-
-[notifications/application/idea-community]
-application-id='idea-community.desktop'
-
-[notifications/application/idea-ultimate]
-application-id='idea-ultimate.desktop'
 
 [notifications/application/lm-studio]
 application-id='lm-studio.desktop'

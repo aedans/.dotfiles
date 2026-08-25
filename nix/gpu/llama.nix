@@ -1,8 +1,26 @@
 { config, pkgs, pkgs-unstable, ... }:
 
+# out=$(NIXPKGS_ALLOW_UNFREE=1 nix build --impure --no-link --print-out-paths '.^out' --expr '
+#   let
+#     pkgs = import (builtins.getFlake "nixpkgs/nixos-unstable") {
+#       config = { allowUnfree = true; cudaSupport = true; };
+#     };
+#   in (pkgs.llama-cpp.override { cudaSupport = true; }).overrideAttrs (old: {
+#     src = pkgs.fetchFromGitHub {
+#       owner = "PrismML-Eng"; repo = "llama.cpp"; rev = "prism";
+#       hash = "sha256-AATH4Bg0nhbuftEA1xcwAX0geVNmuBY5UWK5u2vgEYI=";
+#     };
+#     npmDepsHash = "sha256-pjdbI6NcZRlJVd62xhgbLhWrwFYwgsIwjORqvo1+VD8=";
+#   })
+# ')
+#   "$out/bin/llama-server" \
+#     -m /home/hans/.lmstudio/models/prism-ml/Ternary-Bonsai-27B-gguf/Ternary-Bonsai-27B-Q2_0.gguf \
+#     -ngl 99 -c 262144 -fa 1 \
+#     --cache-type-k q4_0 --cache-type-v q4_0 \
+#     --temp 0.5 --top-p 0.85 --top-k 20 --min-p 0
+
 let
-  # ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-IQ3_XXS.gguf";
-  ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-IQ3_XXS.gguf";
+  ggufPath = "/home/hans/.lmstudio/models/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-IQ3_S.gguf";
   mcpConfig = pkgs.writeText "mcp-config.json" (builtins.toJSON {
     mcpServers = {
       searxng = {
