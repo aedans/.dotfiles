@@ -47,6 +47,7 @@
       (olympus.override { celesteWrapper = "steam-run"; })
       pkgs-unstable.lmstudio
       pkgs-llm-agents.dsh
+      pkgs-llm-agents.pi
     ];
   };
 
@@ -59,6 +60,11 @@
 
   programs = {
     fish.enable = true;
+
+    direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+    };
 
     steam = {
       enable = true;
