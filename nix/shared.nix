@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-unstable, lib, pkgs-llmster, pkgs-llm-agents, ... }:
+{ config, pkgs, pkgs-unstable, lib, pkgs-llm-agents, ... }:
 {
   imports = [ 
     /etc/nixos/hardware-configuration.nix

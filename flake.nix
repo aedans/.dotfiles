@@ -30,11 +30,6 @@
       chaotic,
       ...
   }@inputs: {
-    homeConfigurations.hans = home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      modules = [ ./nix/home.nix ];
-    };
-
     nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
       specialArgs = let
         system = "x86_64-linux";
