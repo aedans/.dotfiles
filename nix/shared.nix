@@ -48,6 +48,7 @@
       pkgs-unstable.lmstudio
       pkgs-llm-agents.dsh
       pkgs-llm-agents.pi
+      pkgs-llm-agents.codex
     ];
   };
 
