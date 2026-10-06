@@ -1,0 +1,405 @@
+--- a/extension.js	2026-10-06 15:57:55.258248481 -0700
++++ b/extension.js	2026-10-06 16:02:40.180750054 -0700
+@@ -25,20 +25,12 @@
+         // Botón indicador principal en el panel
+         this._indicator = new PanelMenu.Button(0.0, _('CodexBar'), false);
+         
+-        // Icon container with progress fill
+-        // Contenedor del icono con relleno de progreso
+-        this._iconBox = new St.BoxLayout({
+-            style_class: 'codexbar-panel-icon-box',
++        // One battery-style bar per provider, filled in by _updateUI
++        this._iconRow = new St.BoxLayout({
+             vertical: false,
+             y_align: Clutter.ActorAlign.CENTER,
+         });
+-        this._iconFill = new St.Widget({
+-            style_class: 'codexbar-panel-icon-fill',
+-            x_expand: false,
+-            width: 0,
+-        });
+-        this._iconBox.add_child(this._iconFill);
+-        this._indicator.add_child(this._iconBox);
++        this._indicator.add_child(this._iconRow);
+ 
+         // Header section of the popup menu
+         // Sección de cabecera del menú desplegable
+@@ -76,14 +68,6 @@
+         this._indicator.menu.box.add_child(this._headerBox);
+         this._indicator.menu.box.add_style_class_name('codexbar-popup');
+ 
+-        // Tabs for switching between different providers
+-        // Pestañas para cambiar entre diferentes proveedores
+-        this._tabsContainer = new St.BoxLayout({
+-            style_class: 'codexbar-tabs-container',
+-            vertical: false,
+-        });
+-        this._indicator.menu.box.add_child(this._tabsContainer);
+-
+         // Main content area for usage stats
+         // Área de contenido principal para las estadísticas de uso
+         this._contentBox = new St.BoxLayout({
+@@ -92,7 +76,7 @@
+         });
+         this._indicator.menu.box.add_child(this._contentBox);
+         
+-        Main.panel.addToStatusArea(this.uuid, this._indicator);
++        Main.panel.addToStatusArea(this.uuid, this._indicator, -1, 'left');
+ 
+         this._activeProviderIndex = 0;
+         this._providersData = [];
+@@ -153,10 +137,8 @@
+         
+         // Step 6: Nullify references to prevent memory leaks
+         // Paso 6: Anular referencias para prevenir fugas de memoria
+-        this._iconFill = null;
+-        this._iconBox = null;
++        this._iconRow = null;
+         this._headerTitle = null;
+-        this._tabsContainer = null;
+         this._contentBox = null;
+         this._headerBox = null;
+         this._providersData = [];
+@@ -407,7 +389,6 @@
+     _updateUI() {
+         if (!this._indicator) return;
+ 
+-        this._tabsContainer.destroy_all_children();
+         this._contentBox.destroy_all_children();
+         
+         const displayMode = this._settings.get_string('display-mode');
+@@ -434,177 +415,150 @@
+             return;
+         }
+ 
+-        // Recalculate active usage for the panel icon (average of all tiers)
+-        // Recalcular el uso activo para el icono del panel (media de todos los niveles)
+-        let totalPercent = 0;
+-        let tierCount = 0;
+-
+-        const activeData = this._providersData[this._activeProviderIndex];
+-        if (activeData && activeData.data && activeData.data.usage) {
+-            const usage = activeData.data.usage;
+-            const tiers = ['primary', 'secondary', 'tertiary', 'quaternary'];
+-            
+-            tiers.forEach(tier => {
+-                if (usage[tier] && usage[tier].usedPercent !== undefined) {
+-                    let p = this._normalizePercent(usage[tier].usedPercent);
+-                    totalPercent += (displayMode === 'remaining') ? (100 - p) : p;
+-                    tierCount++;
+-                }
+-            });
+-        }
++        // Stacked layout: one panel bar and one menu section per provider.
++        this._iconRow.destroy_all_children();
+ 
+-        let activePercent = tierCount > 0 ? (totalPercent / tierCount) : 0;
++        if (this._providers.length === 0) {
++            this._contentBox.add_child(new St.Label({ text: _('No providers configured. Click settings.') }));
++            return;
++        }
+ 
+-        // Create tab buttons
+-        // Crear botones de pestaña
+         this._providers.forEach((provider, index) => {
+-            let btn = new St.Button({
+-                label: provider.name || _('Unknown'),
+-                style_class: 'codexbar-tab',
+-                can_focus: true,
+-            });
+-            if (index === this._activeProviderIndex) {
+-                btn.add_style_class_name('codexbar-tab-active');
+-            }
+-            btn.connect('clicked', () => {
+-                this._activeProviderIndex = index;
+-                this._updateUI();
+-            });
+-            this._tabsContainer.add_child(btn);
++            const providerData = this._providersData[index];
++            this._iconRow.add_child(this._buildPanelItem(provider, providerData, displayMode));
++            this._renderProvider(provider, providerData, displayMode);
+         });
++    }
+ 
+-        // Apply fill to panel icon based on ACTIVE provider
+-        // Aplicar relleno al icono del panel basado en el proveedor ACTIVO
+-        if (this._iconFill) {
+-            // Interior width of the box (20px - 2*1.5px border - 2*1px padding = 15px)
+-            // Ancho interior de la caja (20px - 2*1.5px borde - 2*1px padding = 15px)
+-            const totalFillWidth = 15;
+-            const fillWidth = Math.max(0, Math.min(totalFillWidth, Math.round((activePercent / 100) * totalFillWidth)));
+-            
+-            let color = '#eeeeee';
+-            if (displayMode === 'remaining') {
+-                if (activePercent < 10) color = '#e01b24';
+-                else if (activePercent < 25) color = '#ff7800';
+-                else if (activePercent < 50) color = '#f6d32d';
+-            } else {
+-                if (activePercent > 90) color = '#e01b24';
+-                else if (activePercent > 75) color = '#ff7800';
+-                else if (activePercent > 50) color = '#f6d32d';
+-            }
+-            
+-            this._iconFill.set_width(fillWidth);
+-            this._iconFill.set_style(`background-color: ${color};`);
++    _usageColor(percent, displayMode, fallback) {
++        if (displayMode === 'remaining') {
++            if (percent < 10) return '#e01b24';
++            if (percent < 25) return '#ff7800';
++            if (percent < 50) return '#f6d32d';
++        } else {
++            if (percent > 90) return '#e01b24';
++            if (percent > 75) return '#ff7800';
++            if (percent > 50) return '#f6d32d';
+         }
++        return fallback;
++    }
+ 
+-        if (this._providers.length === 0) {
+-            this._contentBox.add_child(new St.Label({ text: _('No providers configured. Click settings.') }));
+-            return;
+-        }
++    /**
++     * Panel text for one provider: its name and longest (weekly) window's percent.
++     */
++    _buildPanelItem(provider, providerData, displayMode) {
++        const box = new St.BoxLayout({
++            vertical: false,
++            y_align: Clutter.ActorAlign.CENTER,
++            style_class: 'codexbar-panel-item',
++        });
++        box.add_child(new St.Label({
++            text: provider.name || _('Unknown'),
++            y_align: Clutter.ActorAlign.CENTER,
++            style_class: 'codexbar-panel-name',
++        }));
++
++        const usage = providerData && providerData.data && providerData.data.usage;
++        if (!usage) {
++            box.add_child(new St.Label({
++                text: providerData && providerData.error ? '!' : '…',
++                y_align: Clutter.ActorAlign.CENTER,
++                style_class: 'codexbar-panel-percent',
++            }));
++            return box;
++        }
++
++        const windows = ['primary', 'secondary', 'tertiary', 'quaternary']
++            .map(tier => usage[tier])
++            .filter(win => win && win.usedPercent !== undefined);
++        const longest = windows.reduce(
++            (best, win) => (win.windowMinutes || 0) > (best.windowMinutes || 0) ? win : best,
++            windows[0]);
++        if (!longest) return box;
++
++        const p = this._normalizePercent(longest.usedPercent);
++        const percent = (displayMode === 'remaining') ? (100 - p) : p;
++        box.add_child(new St.Label({
++            text: `${Math.round(percent)}%`,
++            y_align: Clutter.ActorAlign.CENTER,
++            style_class: 'codexbar-panel-percent',
++            style: `color: ${this._usageColor(percent, displayMode, '#eeeeee')};`,
++        }));
++        return box;
++    }
++
++    /**
++     * Append one provider's section to the menu.
++     */
++    _renderProvider(provider, providerData, displayMode) {
++        const section = new St.BoxLayout({ vertical: true, x_expand: true, style_class: 'codexbar-provider-section' });
++        this._contentBox.add_child(section);
+ 
+-        const activeProvider = this._providers[this._activeProviderIndex];
+-        // Reuse activeData already declared above
+-        // Reutilizar activeData ya declarada arriba
++        section.add_child(new St.Label({ text: provider.name || _('Unknown'), style_class: 'codexbar-usage-title', style: 'font-size: 1.1em;' }));
+ 
+-        if (!activeData) {
+-            this._contentBox.add_child(new St.Label({ text: _('Loading data...') }));
++        if (!providerData) {
++            section.add_child(new St.Label({ text: _('Loading data...'), style_class: 'codexbar-usage-subtitle' }));
+             return;
+         }
+ 
+-        // Show error if any
+-        // Mostrar error si existe
+-        if (activeData.error) {
+-            let errorBox = new St.BoxLayout({ vertical: true, x_expand: true });
+-
+-            let title = new St.Label({ 
+-                text: _('Error: %s').format(activeData.error),
++        if (providerData.error) {
++            section.add_child(new St.Label({
++                text: _('Error: %s').format(providerData.error),
+                 style: 'color: #ff7800; font-weight: bold; margin-bottom: 10px;',
+-            });
+-            errorBox.add_child(title);
+-
+-            if (activeData.stderr) {
+-                errorBox.add_child(new St.Label({ text: _('Stderr:'), style: 'font-weight: bold; font-size: 0.8em; margin-top: 5px;' }));
++            }));
++            if (providerData.stderr) {
+                 let scroll = new St.ScrollView({ hscrollbar_policy: St.PolicyType.AUTOMATIC, vscrollbar_policy: St.PolicyType.NEVER, style: 'background-color: rgba(0,0,0,0.2); border-radius: 4px; padding: 5px;' });
+-                scroll.add_child(new St.Label({ text: activeData.stderr, style: 'font-family: monospace; font-size: 0.8em;' }));
+-                errorBox.add_child(scroll);
++                scroll.add_child(new St.Label({ text: providerData.stderr, style: 'font-family: monospace; font-size: 0.8em;' }));
++                section.add_child(scroll);
+             }
+-
+-            this._contentBox.add_child(errorBox);
+             return;
+         }
+ 
+-        const data = activeData.data;
++        const data = providerData.data;
+         if (!data || !data.usage) {
+-            this._contentBox.add_child(new St.Label({ text: _('Invalid JSON format (missing usage)') }));
++            section.add_child(new St.Label({ text: _('Invalid JSON format (missing usage)'), style_class: 'codexbar-usage-subtitle' }));
+             return;
+         }
+ 
+         const usage = data.usage;
+-
+-        // Account information
+-        // Información de la cuenta
+-        if (usage.accountEmail) {
+-            let accountBox = new St.BoxLayout({ vertical: true, margin_bottom: 15 });
+-            accountBox.add_child(new St.Label({ text: activeProvider.name, style_class: 'codexbar-usage-title', style: 'font-size: 1.1em;' }));
+-            let accText = usage.accountEmail;
+-            if (usage.loginMethod) accText += ` (${usage.loginMethod})`;
+-            accountBox.add_child(new St.Label({ text: accText, style_class: 'codexbar-usage-subtitle' }));
+-            
+-            if (usage.updatedAt) {
+-                let date = new Date(usage.updatedAt);
+-                let dateStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+-                accountBox.add_child(new St.Label({ text: _('Updated %s').format(dateStr), style_class: 'codexbar-usage-subtitle' }));
+-            }
+-            this._contentBox.add_child(accountBox);
++        let subtitle = usage.accountEmail || '';
++        if (usage.loginMethod) subtitle += subtitle ? ` (${usage.loginMethod})` : usage.loginMethod;
++        if (usage.updatedAt) {
++            let dateStr = new Date(usage.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
++            subtitle += (subtitle ? ' · ' : '') + _('Updated %s').format(dateStr);
+         }
++        if (subtitle)
++            section.add_child(new St.Label({ text: subtitle, style_class: 'codexbar-usage-subtitle' }));
+ 
+-        // Usage bars for each tier
+-        // Barras de uso para cada nivel
+         const tiers = ['primary', 'secondary', 'tertiary', 'quaternary'];
+-        const discoveredLabels = activeData.labels || [];
+-        
+-        tiers.forEach((tier, tierIdx) => {
+-            if (usage[tier] && usage[tier].usedPercent !== undefined) {
+-                let tierData = usage[tier];
+-                
+-                let tierTitle = discoveredLabels[tierIdx] || (tier.charAt(0).toUpperCase() + tier.slice(1));
+-                this._contentBox.add_child(new St.Label({ text: tierTitle, style_class: 'codexbar-usage-title' }));
+-                
+-                let progressContainer = new St.BoxLayout({ style_class: 'codexbar-progress-container' });
+-                let p = this._normalizePercent(tierData.usedPercent);
+-                
+-                let percent = (displayMode === 'remaining') ? (100 - p) : p;
+-                let labelText = (displayMode === 'remaining') ? _('%s%% left').format(percent.toFixed(1)) : _('%s%% used').format(percent.toFixed(1));
+-                
+-                let color = '#3584e4';
+-                if (displayMode === 'remaining') {
+-                    if (percent < 10) color = '#e01b24';
+-                    else if (percent < 25) color = '#ff7800';
+-                    else if (percent < 50) color = '#f6d32d';
+-                } else {
+-                    if (percent > 90) color = '#e01b24';
+-                    else if (percent > 75) color = '#ff7800';
+-                    else if (percent > 50) color = '#f6d32d';
+-                }
+-                
+-                const fullWidth = 290; 
+-                const barWidth = Math.max(1, Math.round((percent / 100) * fullWidth));
++        const discoveredLabels = providerData.labels || [];
++        const rateLabels = data.rateWindowLabels || {};
+ 
+-                let progressBar = new St.Widget({
+-                    style_class: 'codexbar-progress-bar',
+-                    style: `width: ${barWidth}px; background-color: ${color};`,
+-                });
+-                progressContainer.add_child(progressBar);
+-                this._contentBox.add_child(progressContainer);
++        tiers.forEach((tier, tierIdx) => {
++            if (!usage[tier] || usage[tier].usedPercent === undefined) return;
++            let tierData = usage[tier];
++            let tierTitle = rateLabels[tier] || discoveredLabels[tierIdx] || (tier.charAt(0).toUpperCase() + tier.slice(1));
++
++            let p = this._normalizePercent(tierData.usedPercent);
++            let percent = (displayMode === 'remaining') ? (100 - p) : p;
++            let labelText = (displayMode === 'remaining') ? _('%s%% left').format(percent.toFixed(0)) : _('%s%% used').format(percent.toFixed(0));
++
++            const headerBox = new St.BoxLayout({ vertical: false, x_expand: true });
++            headerBox.add_child(new St.Label({ text: tierTitle, style_class: 'codexbar-tier-title' }));
++            headerBox.add_child(new St.Label({ text: labelText, style_class: 'codexbar-tier-title', x_align: Clutter.ActorAlign.END, x_expand: true }));
++            section.add_child(headerBox);
++
++            let progressContainer = new St.BoxLayout({ style_class: 'codexbar-progress-container' });
++            const fullWidth = 290;
++            const barWidth = Math.max(1, Math.round((percent / 100) * fullWidth));
++            progressContainer.add_child(new St.Widget({
++                style_class: 'codexbar-progress-bar',
++                style: `width: ${barWidth}px; background-color: ${this._usageColor(percent, displayMode, '#3584e4')};`,
++            }));
++            section.add_child(progressContainer);
+ 
+-                const statsBox = new St.BoxLayout({ vertical: false, x_expand: true });
+-                statsBox.add_child(new St.Label({ text: labelText, style_class: 'codexbar-usage-subtitle' }));
+-                statsBox.add_child(new St.Label({ text: tierData.resetDescription || '', style_class: 'codexbar-usage-subtitle', x_align: Clutter.ActorAlign.END, x_expand: true }));
+-                
+-                this._contentBox.add_child(statsBox);
+-                
+-                let sep = new St.Widget({ style: 'height: 1px; background-color: rgba(255,255,255,0.05); margin-bottom: 10px; margin-top: 5px;' });
+-                this._contentBox.add_child(sep);
+-            }
++            if (tierData.resetDescription)
++                section.add_child(new St.Label({ text: tierData.resetDescription, style_class: 'codexbar-usage-subtitle' }));
+         });
+     }
+ 
+--- a/stylesheet.css	2026-10-06 15:57:55.258326045 -0700
++++ b/stylesheet.css	2026-10-06 15:59:37.305981521 -0700
+@@ -93,3 +93,38 @@
+ .codexbar-footer-button:hover {
+     background-color: rgba(255, 255, 255, 0.1);
+ }
++
++.codexbar-provider-section {
++    padding-bottom: 10px;
++    margin-bottom: 10px;
++    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
++}
++
++.codexbar-provider-section:last-child {
++    border-bottom: none;
++    margin-bottom: 0;
++}
++
++.codexbar-tier-title {
++    font-size: 0.85em;
++    color: #dddddd;
++    margin-top: 6px;
++    margin-bottom: 4px;
++}
++
++.codexbar-progress-container {
++    margin-bottom: 4px;
++}
++
++.codexbar-panel-item {
++    margin: 0 4px;
++}
++
++.codexbar-panel-name {
++    font-weight: bold;
++    margin-right: 4px;
++}
++
++.codexbar-panel-percent {
++    margin-right: 4px;
++}

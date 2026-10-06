@@ -1,4 +1,21 @@
 { config, pkgs, pkgs-unstable, lib, pkgs-llm-agents, ... }:
+let
+  codex = pkgs-llm-agents.codex;
+  codexWithDaemon = pkgs.runCommand "codex-with-daemon-${codex.version}" {
+    meta = codex.meta;
+  } ''
+    mkdir -p "$out/bin" "$out/codex-path" "$out/codex-resources"
+    cp ${codex}/libexec/codex/bin/codex "$out/bin/codex"
+    cp ${codex}/libexec/codex/bin/codex-code-mode-host "$out/bin/codex-code-mode-host"
+    cp ${pkgs.ripgrep}/bin/rg "$out/codex-path/rg"
+    cp ${pkgs.bubblewrap}/bin/bwrap "$out/codex-resources/bwrap"
+    cp ${pkgs.writeText "codex-package.json" (builtins.toJSON {
+      version = codex.version;
+      target = pkgs.stdenv.hostPlatform.config;
+      entrypoint = "bin/codex";
+    })} "$out/codex-package.json"
+  '';
+in
 {
   imports = [ 
     /etc/nixos/hardware-configuration.nix
@@ -48,7 +65,8 @@
       pkgs-unstable.lmstudio
       pkgs-llm-agents.dsh
       pkgs-llm-agents.pi
-      pkgs-llm-agents.codex
+      pkgs-llm-agents.claude-code
+      codexWithDaemon
     ];
   };
 
