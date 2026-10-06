@@ -1,0 +1,11 @@
+# dconf keys that dump-dconf.sh leaves out: transient state GNOME writes on its own.
+# One full key path per line; `*` matches a single path segment.
+
+/org/gnome/shell/last-selected-power-profile
+/org/gnome/shell/welcome-dialog-last-shown-version
+/org/gnome/shell/extensions/just-perfection/support-notifier-showed-version
+
+# Notification sources are registered automatically whenever an app first notifies.
+# Per-app overrides like enable=false are still kept.
+/org/gnome/desktop/notifications/application-children
+/org/gnome/desktop/notifications/application/*/application-id
