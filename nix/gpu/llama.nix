@@ -13,7 +13,7 @@
 #     npmDepsHash = "sha256-pjdbI6NcZRlJVd62xhgbLhWrwFYwgsIwjORqvo1+VD8=";
 #   })
 # ')
-#   "$out/bin/llama-server" \
+#   "$out/bin/llama-server" --host 0.0.0.0 \
 #     -m /home/hans/.lmstudio/models/prism-ml/Ternary-Bonsai-27B-gguf/Ternary-Bonsai-27B-Q2_0.gguf \
 #     -ngl 99 -c 262144 -fa 1 \
 #     --cache-type-k q4_0 --cache-type-v q4_0 \
