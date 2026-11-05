@@ -17,7 +17,8 @@ in
     description = "Configure GNOME Remote Login";
     wantedBy = [ "gnome-remote-desktop.service" ];
     after = [ "gnome-remote-desktop.service" ];
-    path = [ pkgs.gnome-remote-desktop ];
+    # grdctl --system re-execs itself through pkexec, even as root.
+    path = [ pkgs.gnome-remote-desktop "/run/wrappers" ];
     serviceConfig.Type = "oneshot";
     script = ''
       grdctl --system rdp set-tls-cert ${keys}-tls.crt
