@@ -38,6 +38,7 @@ in
       firefox
       chromium
       vscode
+      obsidian
       jetbrains.idea
       discord
       keepassxc

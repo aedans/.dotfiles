@@ -23,6 +23,7 @@ in
   users.users.hans.packages = with pkgs; [
     gnome-terminal
     gnome-tweaks
+    gnome-connections
     gnomeExtensions.auto-move-windows
     gnomeExtensions.user-themes
     gnomeExtensions.just-perfection
