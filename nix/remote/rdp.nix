@@ -11,15 +11,19 @@ in
   services.gnome.gnome-remote-desktop.enable = true;
 
   # The upstream unit's [Install] section isn't applied by systemd.packages.
-  systemd.services.gnome-remote-desktop.wantedBy = [ "graphical.target" ];
+  # The daemon only reads its settings at startup, so it requires the setup
+  # unit: rerunning setup on a switch restarts the daemon with them.
+  systemd.services.gnome-remote-desktop = {
+    wantedBy = [ "graphical.target" ];
+    requires = [ "gnome-remote-desktop-configure.service" ];
+    after = [ "gnome-remote-desktop-configure.service" ];
+  };
 
+  # grdctl --system only writes the daemon's settings file, so this runs first.
+  # RemainAfterExit lets a switch rerun it when the script changes.
   systemd.services.gnome-remote-desktop-configure = {
     description = "Configure GNOME Remote Login";
-    # Wanted by multi-user.target (not the daemon) so a switch starts it even
-    # when the daemon is already running; RemainAfterExit reruns it on change.
     wantedBy = [ "multi-user.target" ];
-    requires = [ "gnome-remote-desktop.service" ];
-    after = [ "gnome-remote-desktop.service" ];
     # grdctl --system re-execs itself through pkexec, even as root.
     path = [ pkgs.gnome-remote-desktop "/run/wrappers" ];
     serviceConfig = {
