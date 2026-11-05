@@ -39,6 +39,9 @@ in
       grdctl --system rdp set-tls-cert ${state}/rdp-tls.crt
       grdctl --system rdp set-tls-key ${state}/rdp-tls.key
       grdctl --system rdp set-credentials hans "$(cat ${keys}-password)"
+      # Leave the default port to sharing the logged-in session, which
+      # clients like GNOME Connections reach without a port.
+      grdctl --system rdp set-port 3390
       grdctl --system rdp enable
     '';
   };
