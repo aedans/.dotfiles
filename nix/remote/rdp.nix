@@ -15,11 +15,17 @@ in
 
   systemd.services.gnome-remote-desktop-configure = {
     description = "Configure GNOME Remote Login";
-    wantedBy = [ "gnome-remote-desktop.service" ];
+    # Wanted by multi-user.target (not the daemon) so a switch starts it even
+    # when the daemon is already running; RemainAfterExit reruns it on change.
+    wantedBy = [ "multi-user.target" ];
+    requires = [ "gnome-remote-desktop.service" ];
     after = [ "gnome-remote-desktop.service" ];
     # grdctl --system re-execs itself through pkexec, even as root.
     path = [ pkgs.gnome-remote-desktop "/run/wrappers" ];
-    serviceConfig.Type = "oneshot";
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
     script = ''
       grdctl --system rdp set-tls-cert ${keys}-tls.crt
       grdctl --system rdp set-tls-key ${keys}-tls.key
