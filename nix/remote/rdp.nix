@@ -6,6 +6,7 @@
 # GDM still asks for the account password after connecting.
 let
   keys = "/home/hans/Sync/keys/${config.networking.hostName}-rdp";
+  state = config.users.users.gnome-remote-desktop.home;
 in
 {
   services.gnome.gnome-remote-desktop.enable = true;
@@ -30,9 +31,13 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
     };
+    # grdctl --system reads the TLS pair as the gnome-remote-desktop user,
+    # which can't enter /home/hans, so stage a copy it owns first.
     script = ''
-      grdctl --system rdp set-tls-cert ${keys}-tls.crt
-      grdctl --system rdp set-tls-key ${keys}-tls.key
+      install -D -o gnome-remote-desktop -g gnome-remote-desktop -m 644 ${keys}-tls.crt ${state}/rdp-tls.crt
+      install -D -o gnome-remote-desktop -g gnome-remote-desktop -m 600 ${keys}-tls.key ${state}/rdp-tls.key
+      grdctl --system rdp set-tls-cert ${state}/rdp-tls.crt
+      grdctl --system rdp set-tls-key ${state}/rdp-tls.key
       grdctl --system rdp set-credentials hans "$(cat ${keys}-password)"
       grdctl --system rdp enable
     '';
