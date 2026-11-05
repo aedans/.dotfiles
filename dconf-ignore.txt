@@ -9,3 +9,6 @@
 # Per-app overrides like enable=false are still kept.
 /org/gnome/desktop/notifications/application-children
 /org/gnome/desktop/notifications/application/*/application-id
+
+# RDP is configured per host by nix/remote/rdp.nix, not shared through the dumps.
+/org/gnome/desktop/remote-desktop/rdp/*
