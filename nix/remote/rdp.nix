@@ -18,6 +18,8 @@ in
     wantedBy = [ "graphical.target" ];
     requires = [ "gnome-remote-desktop-configure.service" ];
     after = [ "gnome-remote-desktop-configure.service" ];
+    # It can hang on SIGTERM after a dropped connection; don't stall switches.
+    serviceConfig.TimeoutStopSec = 10;
   };
 
   # grdctl --system only writes the daemon's settings file, so this runs first.
