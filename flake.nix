@@ -4,6 +4,9 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # MTGO's wine carries patches, so it has no binary cache; pinned so that
+    # updating nixpkgs doesn't recompile it
+    nixpkgs-wine.url = "github:NixOS/nixpkgs/cf5e76507c6e23b59f7e0ffcc7baa2a39ddd8442";
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     stylix = {
       url = "github:nix-community/stylix/release-26.05";
@@ -24,6 +27,7 @@
   outputs = { 
       nixpkgs,
       nixpkgs-unstable,
+      nixpkgs-wine,
       stylix,
       home-manager,
       llm-agents,
@@ -39,6 +43,7 @@
           config.allowUnfree = true;
         };
         pkgs-llm-agents = llm-agents.packages.${system};
+        pkgs-wine = import nixpkgs-wine { inherit system; };
       };
 
       system = "x86_64-linux";
@@ -65,6 +70,7 @@
           config.allowUnfree = true;
         };
         pkgs-llm-agents = llm-agents.packages.${system};
+        pkgs-wine = import nixpkgs-wine { inherit system; };
       };
 
       system = "x86_64-linux";

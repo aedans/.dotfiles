@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-unstable, lib, pkgs-llm-agents, ... }:
+{ config, pkgs, pkgs-unstable, pkgs-wine, lib, pkgs-llm-agents, ... }:
 let
   codex = pkgs-llm-agents.codex;
   codexWithDaemon = pkgs.runCommand "codex-with-daemon-${codex.version}" {
@@ -68,7 +68,7 @@ in
       pkgs-llm-agents.pi
       pkgs-llm-agents.claude-code
       codexWithDaemon
-      (callPackage ./pkgs/mtgo { })
+      (callPackage ./pkgs/mtgo { inherit (pkgs-wine) wineWow64Packages; })
     ];
   };
 
