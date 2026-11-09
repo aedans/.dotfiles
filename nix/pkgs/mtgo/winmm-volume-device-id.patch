@@ -1,0 +1,20 @@
+--- a/dlls/winmm/waveform.c
++++ b/dlls/winmm/waveform.c
+@@ -2889,6 +2889,17 @@
+     if(!out)
+         return MMSYSERR_INVALPARAM;
+ 
++    if(!InitOnceExecuteOnce(&init_once, WINMM_InitMMDevices, NULL, NULL))
++        return MMSYSERR_NODRIVER;
++
++    /* hWaveOut may also be a device ID. Only open devices have a volume, and
++     * IAudioEndpointVolume always reports full volume, so report that. */
++    if(WINMM_IsMapper(HandleToULong(hWaveOut)) ||
++            HandleToULong(hWaveOut) < g_outmmdevices_count){
++        *out = 0xFFFFFFFF;
++        return MMSYSERR_NOERROR;
++    }
++
+     device = WINMM_GetDeviceFromHWAVE((HWAVE)hWaveOut);
+ 
+     if(!WINMM_ValidateAndLock(device))

@@ -1,0 +1,15 @@
+--- a/dlls/winegstreamer/resampler.c
++++ b/dlls/winegstreamer/resampler.c
+@@ -900,7 +900,11 @@
+ static HRESULT WINAPI resampler_props_SetHalfFilterLength(IWMResamplerProps *iface, LONG length)
+ {
+     FIXME("iface %p, count %lu stub!\n", iface, length);
+-    return E_NOTIMPL;
++
++    /* only a quality hint, so accept it like native does */
++    if (length < 1 || length > 60)
++        return E_INVALIDARG;
++    return S_OK;
+ }
+ 
+ static HRESULT WINAPI resampler_props_SetUserChannelMtx(IWMResamplerProps *iface, ChMtxType *conversion_matrix)

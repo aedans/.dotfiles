@@ -13,10 +13,23 @@
 , gnused
 , gnugrep
 , procps
-, xprop
 }:
 let
-  wine = wineWow64Packages.stable;
+  # MTGO's mute check casts an audio session to ISimpleAudioVolume, which
+  # wine refused until 11.3 (MR 9756), so its startup chime threw an
+  # unhandled InvalidCastException. Its sounds go through Media Foundation's
+  # resampler, which wine implements on GStreamer, and only the Full
+  # variants build with it. Before each sound it also reads the volume of
+  # device 0 with waveOutGetVolume, which wine only answers for open handles;
+  # MTGO ignores the error, reads a volume of 0 and stays silent. NAudio then
+  # sets the resampler's filter length, which wine stubs out with E_NOTIMPL,
+  # and the exception kills the sound queue's playback thread.
+  wine = wineWow64Packages.unstableFull.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [
+      ./winmm-volume-device-id.patch
+      ./resampler-half-filter-length.patch
+    ];
+  });
 
   # winetricks fetches this from web.archive.org, which is slow and flaky.
   powerPointViewer = fetchurl {
@@ -31,7 +44,7 @@ let
     name = "mtgo";
     runtimeInputs = [
       wine winetricks curl cabextract
-      coreutils util-linux findutils gnused gnugrep procps xprop
+      coreutils util-linux findutils gnused gnugrep procps
     ];
     text = ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}/mtgo"
@@ -76,8 +89,7 @@ let
         winetricks -q corefonts calibri tahoma d3dcompiler_47
         # dotnet48's installer hangs on multiple cores
         taskset -c 0 winetricks -f -q dotnet48
-        winetricks -q win7 renderer=gdi gdiplus=builtin \
-          sound=disabled winegstreamer=disabled wmp=disabled
+        winetricks -q win7 renderer=gdi gdiplus=builtin sound=pulse wmp=disabled
         wineboot -s
 
         # keep MTGO's Documents (replays, deck exports) outside the prefix
@@ -105,31 +117,22 @@ let
       find "$WINEPREFIX/drive_c/users" -path '*Apps/2.0*' -iname MTGO.exe.config \
         -exec sed -i -E 's/("(DisableAutomationPeer|PurgeAutomationEvents|DisableStylusInput|DisableTabletDevices)" value=")false/\1true/g' {} +
 
-      # with an audio driver loaded, MTGO's startup chime throws an unhandled
-      # InvalidCastException (ISimpleAudioVolume); without one it carries on
-      export WINEDLLOVERRIDES="winepulse.drv=d;winealsa.drv=d;wineoss.drv=d''${WINEDLLOVERRIDES:+;$WINEDLLOVERRIDES}"
-
-      # MTGO loads on its UI thread, which is also where wine answers GNOME's
-      # _NET_WM_PING, so GNOME offers to kill it while it loads. Withdraw the
-      # ping from MTGO's windows as they appear and GNOME stops checking them.
-      unping_mtgo_windows() {
-        local w
-        for w in $(xprop -root _NET_CLIENT_LIST | grep -o '0x[0-9a-f]*'); do
-          xprop -id "$w" WM_CLASS 2>/dev/null | grep -q '"mtgo.exe"' || continue
-          xprop -id "$w" WM_PROTOCOLS 2>/dev/null | grep -q _NET_WM_PING || continue
-          xprop -id "$w" -f WM_PROTOCOLS 32a \
-            -set WM_PROTOCOLS WM_DELETE_WINDOW,WM_TAKE_FOCUS 2>/dev/null || true
-        done
-      }
-      if [ -n "''${DISPLAY:-}" ]; then
-        exec {spy}< <(xprop -root -spy _NET_CLIENT_LIST)
-        spy_pid=$!
-        while read -r _ <&"$spy"; do unping_mtgo_windows; done &
-        unping_pid=$!
-        trap 'kill "$spy_pid" "$unping_pid" 2>/dev/null || true' EXIT
+      # prefixes set up for wine 11.0 have sound and GStreamer turned off
+      # (winetricks can't do this here: it runs while wine upgrades the prefix)
+      if grep -q '^"Audio"="disabled"' "$WINEPREFIX/user.reg"; then
+        wine reg add 'HKCU\Software\Wine\Drivers' /v Audio /d pulse /f
+        wine reg delete 'HKCU\Software\Wine\DllOverrides' /v '*winegstreamer' /f || true
+        # wine skipped winegstreamer's system32 stubs while it was disabled
+        wineboot -u
+        wineserver -w
       fi
 
       cd "$WINEPREFIX/drive_c"
+      # MTGO loads on its UI thread, where wine answers GNOME's _NET_WM_PING, so
+      # GNOME may offer to kill it while it loads; answer Wait. Don't withdraw
+      # the ping: GNOME keeps a window it saw stop responding unfocusable, off
+      # the dock and stuck on its workspace until it answers a ping again.
+      #
       # Docker and Lutris both cap MTGO at 4 CPUs
       taskset -c 0-3 wine 'C:\mtgo-setup.exe'
 
