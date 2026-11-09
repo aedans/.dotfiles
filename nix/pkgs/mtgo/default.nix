@@ -13,6 +13,7 @@
 , gnused
 , gnugrep
 , procps
+, zenity
 }:
 let
   # MTGO's mute check casts an audio session to ISimpleAudioVolume, which
@@ -44,7 +45,7 @@ let
     name = "mtgo";
     runtimeInputs = [
       wine winetricks curl cabextract
-      coreutils util-linux findutils gnused gnugrep procps
+      coreutils util-linux findutils gnused gnugrep procps zenity
     ];
     text = ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}/mtgo"
@@ -96,16 +97,99 @@ let
 
       mkdir -p "$data/files" "$W_CACHE/PowerPointViewer"
 
+      # Setup shows a progress window, so launching from the desktop isn't ten
+      # silent minutes. It's fed through fd 3, which wine must not inherit:
+      # wineserver outlives setup and would hold the window open.
+      progress_open=false
+      creeper=""
+      cancelled="$data/.setup-cancelled"
+      progress() {
+        $progress_open || return 0
+        ( trap "" PIPE; printf '%s\n' "$@" >&3 ) 2>/dev/null || true
+      }
+      # Steps print nothing to go on, so move the bar from $1 towards $2
+      # percent over the $3 seconds they usually take.
+      creep() {
+        $progress_open || return 0
+        (
+          trap "" PIPE
+          start=$SECONDS
+          while sleep 5; do
+            pct=$(( $1 + ($2 - $1) * (SECONDS - start) / $3 ))
+            [ "$pct" -gt "$2" ] && pct=$2
+            printf '%s\n' "$pct" >&3 || exit 0
+          done
+        ) 2>/dev/null &
+        creeper=$!
+      }
+      stop_creep() {
+        if [ -n "$creeper" ]; then kill "$creeper" 2>/dev/null || true; fi
+        creeper=""
+      }
+      step() { stop_creep; progress "$1" "# $2"; echo "$2" >&2; }
+      start_progress() {
+        [ -n "''${DISPLAY:-}''${WAYLAND_DISPLAY:-}" ] || return 0
+        rm -f "$cancelled"
+        fifo="$data/.setup-progress"
+        rm -f "$fifo"
+        mkfifo "$fifo"
+        main=$$
+        (
+          if ! zenity --progress --title="Magic: The Gathering Online" \
+              --text="Setting up Magic Online" --width=440 \
+              --auto-close --time-remaining <"$fifo" 2>/dev/null; then
+            # Cancel: stop setup and the wine processes it started
+            touch "$cancelled"
+            for pid in $(pgrep -P "$main"); do
+              [ "$pid" = "$BASHPID" ] || kill "$pid" 2>/dev/null || true
+            done
+            kill "$main" 2>/dev/null || true
+            wineserver -k 2>/dev/null || true
+          fi
+        ) 3>&- &
+        exec 3>"$fifo"
+        rm -f "$fifo"
+        progress_open=true
+      }
+      setup_exit() {
+        stop_creep
+        $progress_open || return 0
+        exec 3>&-
+        if [ ! -e "$bootstrapped" ] && [ ! -e "$cancelled" ]; then
+          zenity --error --title="Magic: The Gathering Online" \
+            --text="Setting up Magic Online failed. Run mtgo in a terminal to see why." \
+            2>/dev/null || true
+        fi
+        rm -f "$cancelled"
+      }
+
       if [ ! -e "$bootstrapped" ]; then
+        trap setup_exit EXIT
+        start_progress
         echo "Setting up MTGO wine prefix in $WINEPREFIX (takes a while)..." >&2
+        # a prefix whose setup was cut short is started over
+        if [ -d "$WINEPREFIX" ]; then
+          wineserver -k 3>&- || true
+          rm -rf "$WINEPREFIX"
+        fi
         ln -sf ${powerPointViewer} "$W_CACHE/PowerPointViewer/PowerPointViewer.exe"
+
+        step 0 "Creating the wine prefix"
         # skip the Mono/Gecko install prompts; dotnet48 replaces Mono anyway
-        WINEDLLOVERRIDES="mscoree=;mshtml=" wineboot -i
-        winetricks -q corefonts calibri tahoma d3dcompiler_47
+        WINEDLLOVERRIDES="mscoree=;mshtml=" wineboot -i 3>&-
+
+        step 3 "Installing fonts"
+        creep 3 12 80
+        winetricks -q corefonts calibri tahoma d3dcompiler_47 3>&-
+
+        step 12 "Installing .NET Framework 4.8 (takes several minutes)"
+        creep 12 95 540
         # dotnet48's installer hangs on multiple cores
-        taskset -c 0 winetricks -f -q dotnet48
-        winetricks -q win7 renderer=gdi gdiplus=builtin sound=pulse wmp=disabled
-        wineboot -s
+        taskset -c 0 winetricks -f -q dotnet48 3>&-
+
+        step 95 "Configuring wine"
+        winetricks -q win7 renderer=gdi gdiplus=builtin sound=pulse wmp=disabled 3>&-
+        wineboot -s 3>&-
 
         # keep MTGO's Documents (replays, deck exports) outside the prefix
         docs="$WINEPREFIX/drive_c/users/$USER/Documents"
@@ -113,6 +197,9 @@ let
         ln -s "$data/files" "$docs"
 
         touch "$bootstrapped"
+        step 100 "Starting Magic Online"
+        setup_exit
+        trap - EXIT
       fi
 
       $do_winecfg && { winecfg; wineserver -w; }
