@@ -13,7 +13,7 @@
 , gnused
 , gnugrep
 , procps
-, zenity
+, yad
 }:
 let
   # MTGO's mute check casts an audio session to ISimpleAudioVolume, which
@@ -45,7 +45,7 @@ let
     name = "mtgo";
     runtimeInputs = [
       wine winetricks curl cabextract
-      coreutils util-linux findutils gnused gnugrep procps zenity
+      coreutils util-linux findutils gnused gnugrep procps yad
     ];
     text = ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}/mtgo"
@@ -126,7 +126,30 @@ let
         if [ -n "$creeper" ]; then kill "$creeper" 2>/dev/null || true; fi
         creeper=""
       }
-      step() { stop_creep; progress "$1" "# $2"; echo "$2" >&2; }
+      step() {
+        stop_creep
+        progress "$1" "# <b>$2</b>"
+        echo "$2" >&2
+      }
+      # Run a setup command, passing its output through to the terminal and
+      # the window's log. yad reads "#" lines as Pango markup with C escapes,
+      # so markup characters and backslashes (all over wine's Windows paths)
+      # are escaped.
+      run() {
+        "$@" 3>&- 2>&1 | while IFS= read -r line; do
+          printf '%s\n' "$line" >&2
+          $progress_open || continue
+          line=''${line//$'\r'/}
+          case "$line" in
+            ""|-*|*libEGL*|*"pci id"*|"grep: warning"*) continue ;;
+          esac
+          line=''${line//"\\"/"\\\\"}
+          line=''${line//"&"/"&amp;"}
+          line=''${line//"<"/"&lt;"}
+          line=''${line//">"/"&gt;"}
+          progress "# <tt>$line</tt>"
+        done
+      }
       start_progress() {
         [ -n "''${DISPLAY:-}''${WAYLAND_DISPLAY:-}" ] || return 0
         rm -f "$cancelled"
@@ -135,9 +158,12 @@ let
         mkfifo "$fifo"
         main=$$
         (
-          if ! zenity --progress --title="Magic: The Gathering Online" \
-              --text="Setting up Magic Online" --width=440 \
-              --auto-close --time-remaining <"$fifo" 2>/dev/null; then
+          # Cancel, or closing the window, exits non-zero. After a failure the
+          # window stays open on the log until it's closed.
+          if ! yad --progress --title="Magic: The Gathering Online" \
+              --text="Setting up Magic Online" --width=720 \
+              --enable-log=Details --log-expanded --log-height=320 \
+              --button=Cancel:1 --auto-close <"$fifo" 2>/dev/null; then
             # Cancel: stop setup and the wine processes it started
             touch "$cancelled"
             for pid in $(pgrep -P "$main"); do
@@ -154,12 +180,11 @@ let
       setup_exit() {
         stop_creep
         $progress_open || return 0
-        exec 3>&-
         if [ ! -e "$bootstrapped" ] && [ ! -e "$cancelled" ]; then
-          zenity --error --title="Magic: The Gathering Online" \
-            --text="Setting up Magic Online failed. Run mtgo in a terminal to see why." \
-            2>/dev/null || true
+          progress "# <b><span foreground=\"red\">Setup failed.</span></b> Close this window and launch MTGO again to start over."
         fi
+        exec 3>&-
+        progress_open=false
         rm -f "$cancelled"
       }
 
@@ -176,20 +201,20 @@ let
 
         step 0 "Creating the wine prefix"
         # skip the Mono/Gecko install prompts; dotnet48 replaces Mono anyway
-        WINEDLLOVERRIDES="mscoree=;mshtml=" wineboot -i 3>&-
+        WINEDLLOVERRIDES="mscoree=;mshtml=" run wineboot -i
 
         step 3 "Installing fonts"
         creep 3 12 80
-        winetricks -q corefonts calibri tahoma d3dcompiler_47 3>&-
+        run winetricks -q corefonts calibri tahoma d3dcompiler_47
 
         step 12 "Installing .NET Framework 4.8 (takes several minutes)"
         creep 12 95 540
         # dotnet48's installer hangs on multiple cores
-        taskset -c 0 winetricks -f -q dotnet48 3>&-
+        run taskset -c 0 winetricks -f -q dotnet48
 
         step 95 "Configuring wine"
-        winetricks -q win7 renderer=gdi gdiplus=builtin sound=pulse wmp=disabled 3>&-
-        wineboot -s 3>&-
+        run winetricks -q win7 renderer=gdi gdiplus=builtin sound=pulse wmp=disabled
+        run wineboot -s
 
         # keep MTGO's Documents (replays, deck exports) outside the prefix
         docs="$WINEPREFIX/drive_c/users/$USER/Documents"
