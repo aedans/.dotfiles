@@ -48,10 +48,25 @@ let
     ];
     text = ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}/mtgo"
+      mkdir -p "$data"
+
+      # Two launches at once (e.g. the desktop icon and a terminal) clobber
+      # each other's winetricks temp files and share one wineserver. -o keeps
+      # the lock out of wine's processes, which can outlive this script.
+      if [ -z "''${MTGO_LOCKED:-}" ]; then
+        rc=0
+        MTGO_LOCKED=1 flock -n -o -E 75 "$data/.lock" "$0" "$@" || rc=$?
+        [ "$rc" -eq 75 ] && echo "MTGO is already running or setting up" >&2
+        exit "$rc"
+      fi
       export WINEPREFIX="$data/prefix"
       export WINEARCH=win64
       export WINEDEBUG="''${WINEDEBUG:--all}"
       export W_CACHE="''${XDG_CACHE_HOME:-$HOME/.cache}/winetricks"
+      # The Full variants wrap bin/wine in a script, so winetricks can't read
+      # its ELF header to tell it's a wow64 build and falls back to wine64,
+      # which wow64 builds don't have.
+      export WINE64=wine
       setup="$WINEPREFIX/drive_c/mtgo-setup.exe"
       bootstrapped="$WINEPREFIX/.mtgo-bootstrapped"
 
