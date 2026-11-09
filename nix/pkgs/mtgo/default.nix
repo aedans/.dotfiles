@@ -12,6 +12,7 @@
 , findutils
 , gnused
 , gnugrep
+, procps
 , xprop
 }:
 let
@@ -30,7 +31,7 @@ let
     name = "mtgo";
     runtimeInputs = [
       wine winetricks curl cabextract
-      coreutils util-linux findutils gnused gnugrep xprop
+      coreutils util-linux findutils gnused gnugrep procps xprop
     ];
     text = ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}/mtgo"
@@ -131,8 +132,27 @@ let
       cd "$WINEPREFIX/drive_c"
       # Docker and Lutris both cap MTGO at 4 CPUs
       taskset -c 0-3 wine 'C:\mtgo-setup.exe'
-      # setup.exe hands off to the ClickOnce client; stay up until it exits
-      wineserver -w
+
+      # setup.exe hands off to the ClickOnce client, and dfsvc.exe and .NET's
+      # mscorsvw.exe outlive MTGO and keep wine up, so wait on MTGO.exe itself.
+      # The first launch downloads the client before it starts, and a client
+      # update restarts it, so it has to stay gone for a few seconds.
+      mtgo_running() { pgrep -f 'MTGO\.exe' >/dev/null; }
+      SECONDS=0
+      until mtgo_running; do
+        if [ "$SECONDS" -gt 1800 ]; then
+          echo "MTGO did not start within 30 minutes" >&2
+          wineserver -k
+          exit 1
+        fi
+        sleep 2
+      done
+      gone=0
+      while [ "$gone" -lt 3 ]; do
+        if mtgo_running; then gone=0; else gone=$((gone + 1)); fi
+        sleep 2
+      done
+      wineserver -k
     '';
   };
 
