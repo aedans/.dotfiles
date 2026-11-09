@@ -68,6 +68,7 @@ in
       pkgs-llm-agents.pi
       pkgs-llm-agents.claude-code
       codexWithDaemon
+      (callPackage ./pkgs/mtgo { })
     ];
   };
 
