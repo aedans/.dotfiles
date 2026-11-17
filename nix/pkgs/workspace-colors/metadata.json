@@ -1,0 +1,6 @@
+{
+  "uuid": "workspace-colors@hans",
+  "name": "Workspace Colors",
+  "description": "Gives each workspace its own background, top bar, dock and GTK app colors.",
+  "shell-version": ["50"]
+}

@@ -7,6 +7,8 @@ let
   });
 in
 {
+  imports = [ ./workspace-colors.nix ];
+
   services = {
     displayManager.gdm.enable = true;
     desktopManager.gnome.enable = true;

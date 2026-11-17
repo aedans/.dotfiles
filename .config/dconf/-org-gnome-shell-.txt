@@ -2,7 +2,7 @@
 always-show-log-out=true
 disable-user-extensions=false
 disabled-extensions=['system-monitor@gnome-shell-extensions.gcampax.github.com', 'native-window-placement@gnome-shell-extensions.gcampax.github.com', 'windowsNavigator@gnome-shell-extensions.gcampax.github.com', 'workspace-indicator@gnome-shell-extensions.gcampax.github.com', 'places-menu@gnome-shell-extensions.gcampax.github.com', 'drive-menu@gnome-shell-extensions.gcampax.github.com', 'window-list@gnome-shell-extensions.gcampax.github.com', 'apps-menu@gnome-shell-extensions.gcampax.github.com']
-enabled-extensions=['user-theme@gnome-shell-extensions.gcampax.github.com', 'just-perfection-desktop@just-perfection', 'dash-to-dock@micxgx.gmail.com', 'auto-move-windows@gnome-shell-extensions.gcampax.github.com', 'Vitals@CoreCoding.com', 'appindicatorsupport@rgcjonas.gmail.com', 'tailscale-status@maxgallup.github.com', 'codexbar@inled.es']
+enabled-extensions=['user-theme@gnome-shell-extensions.gcampax.github.com', 'just-perfection-desktop@just-perfection', 'dash-to-dock@micxgx.gmail.com', 'auto-move-windows@gnome-shell-extensions.gcampax.github.com', 'Vitals@CoreCoding.com', 'appindicatorsupport@rgcjonas.gmail.com', 'tailscale-status@maxgallup.github.com', 'codexbar@inled.es', 'workspace-colors@hans']
 favorite-apps=['firefox.desktop', 'org.gnome.Nautilus.desktop', 'discord.desktop', 'code.desktop', 'idea-oss.desktop', 'steam.desktop']
 
 [app-switcher]
@@ -92,7 +92,7 @@ icon-size=16
 tray-position='right'
 
 [extensions/user-theme]
-name='shell-Dark-Nord'
+name=''
 
 [extensions/vertical-workspaces]
 aaa-loading-profile=false
