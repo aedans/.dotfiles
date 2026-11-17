@@ -19,6 +19,7 @@ in
 {
   imports = [ 
     /etc/nixos/hardware-configuration.nix
+    ./vm.nix
   ];
   
   # stylix = {
