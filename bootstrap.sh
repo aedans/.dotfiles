@@ -26,3 +26,5 @@ while read in; do
   echo Installing vscode extension $in
   code --install-extension $in
 done < /home/hans/.dotfiles/.config/Code/User/extensions.txt
+
+./load-firefox.sh

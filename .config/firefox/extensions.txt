@@ -1,0 +1,6 @@
+@react-devtools
+FirefoxColor@mozilla.com
+addon@darkreader.org
+extension@redux.devtools
+uBlock0@raymondhill.net
+{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}

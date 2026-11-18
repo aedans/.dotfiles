@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "patchCsp": true,
+    "updateInterval": 24,
+    "updateOnlyEnabled": true
+  },
+  "imports": [
+    {
+      "url": "https://github.com/catppuccin/userstyles/releases/download/all-userstyles-export/import.json",
+      "vars": {
+        "lightFlavor": "latte",
+        "darkFlavor": "mocha",
+        "accentColor": "mauve"
+      }
+    }
+  ]
+}

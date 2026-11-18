@@ -20,6 +20,7 @@ in
   imports = [ 
     /etc/nixos/hardware-configuration.nix
     ./vm.nix
+    ./firefox.nix
   ];
   
   # stylix = {
@@ -36,7 +37,6 @@ in
     extraGroups = [ "networkmanager" "wheel" "docker" ];
     shell = pkgs.fish;
     packages = with pkgs; [
-      firefox
       chromium
       vscode
       obsidian
