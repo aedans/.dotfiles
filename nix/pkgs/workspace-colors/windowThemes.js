@@ -7,15 +7,18 @@ import {schemeAt} from './schemes.js';
 // of their windows should wear: its workspace's theme. The module animates
 // the change, so a window moved between workspaces fades to the new theme.
 // Application windows are named by their GTK object path. Dialogs without one,
-// such as file pickers the desktop portal shows for another application, are
-// named by title to the process showing them; other windows without one are
-// left alone, which keeps applications that aren't GNOME's (Firefox, VS
-// Code) as they are while their dialogs follow the workspace. Windows on all
-// workspaces, and processes without the module, are left alone too.
+// such as file pickers the desktop portal shows for another application, and
+// the windows of the GTK applications in TITLED_APPS, are named by title to
+// the process showing them; other windows without one are left alone, which
+// keeps applications that draw their own look (Firefox, Electron's) as they
+// are while their dialogs follow the workspace. Windows on all workspaces, and
+// processes without the module, are left alone too.
 
 const OBJECT_PATH = '/org/hans/WorkspaceTheme';
 const INTERFACE = 'org.hans.WorkspaceTheme';
 const PROCESS_BUS_PREFIX = 'org.hans.WorkspaceTheme.P';
+// Window classes of plain GTK applications without a GTK object path.
+const TITLED_APPS = new Set(['qemu']);
 
 function themeOf(schemes, window) {
     const workspace = window.is_on_all_workspaces() ? null : window.get_workspace();
@@ -40,7 +43,7 @@ function sendTheme(window, theme) {
     const path = window.get_gtk_window_object_path();
     if (bus && path)
         call(bus, 'SetWindowTheme', [path, theme]);
-    else if (window.get_transient_for() && window.get_pid() > 0)
+    else if ((window.get_transient_for() || TITLED_APPS.has(window.get_wm_class())) && window.get_pid() > 0)
         call(`${PROCESS_BUS_PREFIX}${window.get_pid()}`, 'SetToplevelTheme', [window.get_title() ?? '', theme]);
 }
 
@@ -57,8 +60,13 @@ export function enableWindowThemes(schemes) {
             'workspace-changed', () => update(window),
             'notify::gtk-window-object-path', () => update(window),
             'notify::gtk-unique-bus-name', () => update(window),
-            // Only windows named by title.
+            // Only windows named by title. A window's class can arrive after
+            // its title, deciding whether it's named by title at all.
             'notify::title', () => {
+                if (!window.get_gtk_window_object_path())
+                    update(window);
+            },
+            'notify::wm-class', () => {
                 if (!window.get_gtk_window_object_path())
                     update(window);
             },
