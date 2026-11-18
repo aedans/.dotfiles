@@ -11,8 +11,10 @@ import {schemeAt} from './schemes.js';
 // the windows of the GTK applications in TITLED_APPS, are named by title to
 // the process showing them; other windows without one are left alone, which
 // keeps applications that draw their own look (Firefox, Electron's) as they
-// are while their dialogs follow the workspace. Windows on all workspaces, and
-// processes without the module, are left alone too.
+// are while their dialogs follow the workspace. Such a dialog is named only
+// once it's shown, so its process is told the theme of its focused window
+// ahead of time, which the module gives its dialogs as they're shown. Windows
+// on all workspaces, and processes without the module, are left alone too.
 
 const OBJECT_PATH = '/org/hans/WorkspaceTheme';
 const INTERFACE = 'org.hans.WorkspaceTheme';
@@ -27,7 +29,7 @@ function themeOf(schemes, window) {
 
 function call(bus, method, parameters) {
     Gio.DBus.session.call(bus, OBJECT_PATH, INTERFACE, method,
-        new GLib.Variant('(ss)', parameters), null,
+        new GLib.Variant(`(${'s'.repeat(parameters.length)})`, parameters), null,
         Gio.DBusCallFlags.NO_AUTO_START, -1, null,
         (connection, result) => {
             try {
@@ -47,13 +49,35 @@ function sendTheme(window, theme) {
         call(`${PROCESS_BUS_PREFIX}${window.get_pid()}`, 'SetToplevelTheme', [window.get_title() ?? '', theme]);
 }
 
+// The process bus of an application's own window that GTK doesn't name, whose
+// dialogs the shell can only name once they're shown.
+function unnamedProcessBus(window) {
+    if (window.get_gtk_window_object_path() || window.get_transient_for() || window.get_pid() <= 0)
+        return null;
+    return `${PROCESS_BUS_PREFIX}${window.get_pid()}`;
+}
+
 export function enableWindowThemes(schemes) {
     if (!schemes.some(s => s.theme !== undefined))
         return () => {};
 
     const owner = {};
     const windows = new Set();
-    const update = window => sendTheme(window, themeOf(schemes, window));
+    // Process buses told a theme, to clear when disabled.
+    const processes = new Set();
+    const updateProcess = () => {
+        const window = global.display.focus_window;
+        const bus = window ? unnamedProcessBus(window) : null;
+        if (!bus)
+            return;
+        processes.add(bus);
+        call(bus, 'SetProcessTheme', [themeOf(schemes, window)]);
+    };
+    const update = window => {
+        sendTheme(window, themeOf(schemes, window));
+        if (window === global.display.focus_window)
+            updateProcess();
+    };
     const track = window => {
         windows.add(window);
         window.connectObject(
@@ -83,8 +107,12 @@ export function enableWindowThemes(schemes) {
         update(window);
     };
 
-    global.display.connectObject('window-created', (display, window) => track(window), owner);
+    global.display.connectObject(
+        'window-created', (display, window) => track(window),
+        'notify::focus-window', updateProcess,
+        owner);
     global.get_window_actors().forEach(actor => track(actor.meta_window));
+    updateProcess();
 
     return () => {
         global.display.disconnectObject(owner);
@@ -92,5 +120,6 @@ export function enableWindowThemes(schemes) {
             window.disconnectObject(owner);
             sendTheme(window, '');
         });
+        processes.forEach(bus => call(bus, 'SetProcessTheme', ['']));
     };
 }

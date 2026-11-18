@@ -1,9 +1,12 @@
 // A theme is a "ws-<theme>" class on a toplevel window, plus "ws-themed" while
 // it has one. A theme change on an already themed window also adds
 // "ws-animating" until the CSS transitions finish, so the stylesheets can
-// enable color transitions only around theme changes. Windows that belong to
+// enable color transitions only around theme changes. Any other change (a
+// first theme, or none) adds "ws-settling" for as long instead, so the
+// stylesheets can turn off the toolkit theme's own transitions (buttons'), and
+// the window changes at once as a whole. Windows that belong to
 // another (dialogs, and in GTK 3 menus) take its theme as they're shown, and
-// follow it when it changes.
+// follow it when it changes; other dialogs take the process's theme.
 #define G_LOG_DOMAIN "workspace-theme"
 #include "windows.h"
 #include "terminal.h"
@@ -12,9 +15,10 @@
 #define THEME_KEY "workspace-theme"
 #define GENERATION_KEY "workspace-theme-generation"
 #define ANIMATING_CLASS "ws-animating"
+#define SETTLING_CLASS "ws-settling"
 #define THEMED_CLASS "ws-themed"
 // Longer than the stylesheets' transitions, so they finish before
-// ws-animating is removed.
+// ws-animating is removed; ws-settling stays as long, past the restyle.
 #define ANIMATING_MS 450
 
 typedef struct {
@@ -22,22 +26,27 @@ typedef struct {
     guint generation;
 } AnimationEnd;
 
+static char *process_theme;
+
 static gboolean end_animation(gpointer data)
 {
     AnimationEnd *end = data;
     guint current = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(end->window), GENERATION_KEY));
-    if (current == end->generation)
+    if (current == end->generation) {
         widget_remove_class(end->window, ANIMATING_CLASS);
+        widget_remove_class(end->window, SETTLING_CLASS);
+    }
     g_object_unref(end->window);
     g_free(end);
     return G_SOURCE_REMOVE;
 }
 
-static void start_animation(GtkWidget *widget)
+static void start_animation(GtkWidget *widget, gboolean animate)
 {
     guint generation = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(widget), GENERATION_KEY)) + 1;
     g_object_set_data(G_OBJECT(widget), GENERATION_KEY, GUINT_TO_POINTER(generation));
-    widget_add_class(widget, ANIMATING_CLASS);
+    widget_remove_class(widget, animate ? SETTLING_CLASS : ANIMATING_CLASS);
+    widget_add_class(widget, animate ? ANIMATING_CLASS : SETTLING_CLASS);
     AnimationEnd *end = g_new(AnimationEnd, 1);
     end->window = g_object_ref(widget);
     end->generation = generation;
@@ -56,8 +65,7 @@ void window_set_theme(GtkWindow *window, const char *theme)
         g_autofree char *old_class = g_strconcat("ws-", old, NULL);
         widget_remove_class(widget, old_class);
     }
-    if (animate)
-        start_animation(widget);
+    start_animation(widget, animate);
     if (theme[0] != '\0') {
         g_autofree char *new_class = g_strconcat("ws-", theme, NULL);
         widget_add_class(widget, new_class);
@@ -97,9 +105,17 @@ static gboolean on_map(GSignalInvocationHint *hint, guint n_params, const GValue
     if (!GTK_IS_WINDOW(object) || g_object_get_data(object, THEME_KEY))
         return TRUE;
     const char *theme = inherited_theme(GTK_WINDOW(object));
+    if (!theme && GTK_IS_DIALOG(object) && process_theme)
+        theme = process_theme;
     if (theme)
         window_set_theme(GTK_WINDOW(object), theme);
     return TRUE;
+}
+
+void windows_set_process_theme(const char *theme)
+{
+    g_free(process_theme);
+    process_theme = theme[0] != '\0' ? g_strdup(theme) : NULL;
 }
 
 void windows_setup(void)

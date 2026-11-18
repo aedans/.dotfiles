@@ -3,8 +3,10 @@
 // by their GtkApplication object path (SetWindowTheme). Other windows the
 // shell can see, such as file pickers shown by the desktop portal, have no
 // such path, so they are named by title (SetToplevelTheme), sent to the name
-// org.hans.WorkspaceTheme.P<pid> each process running the module owns.
-// Windows that belong to another follow it (see windows.c).
+// org.hans.WorkspaceTheme.P<pid> each process running the module owns, along
+// with the theme of the process's focused window (SetProcessTheme), which
+// dialogs wear until they're named. Windows that belong to another follow it
+// (see windows.c).
 #define G_LOG_DOMAIN "workspace-theme"
 #include <unistd.h>
 
@@ -29,6 +31,9 @@ static const char introspection_xml[] =
     "    </method>"
     "    <method name='SetToplevelTheme'>"
     "      <arg type='s' name='title' direction='in'/>"
+    "      <arg type='s' name='theme' direction='in'/>"
+    "    </method>"
+    "    <method name='SetProcessTheme'>"
     "      <arg type='s' name='theme' direction='in'/>"
     "    </method>"
     "  </interface>"
@@ -73,6 +78,12 @@ static void handle_method(GDBusConnection *connection, const char *sender,
 {
     const char *name;
     const char *theme;
+    if (g_strcmp0(method_name, "SetProcessTheme") == 0) {
+        g_variant_get(parameters, "(&s)", &theme);
+        windows_set_process_theme(theme);
+        g_dbus_method_invocation_return_value(invocation, NULL);
+        return;
+    }
     g_variant_get(parameters, "(&s&s)", &name, &theme);
 
     gboolean found;

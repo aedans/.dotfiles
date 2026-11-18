@@ -90,6 +90,12 @@ let
     window.ws-animating {
       ${transitionProperty faded.gtk4}
     }
+
+    /* A first theme (or none) applies at once, buttons included. */
+    window.ws-settling,
+    window.ws-settling * {
+      transition: none;
+    }
   '';
 
   # GTK 3's themes are whole stylesheets (see gtk3-themes.nix); this only fades
@@ -105,6 +111,12 @@ let
     }
     .ws-animating {
       ${transitionProperty faded.gtk3}
+    }
+
+    /* A first theme (or none) applies at once, buttons included. */
+    .ws-settling,
+    .ws-settling * {
+      transition: none;
     }
   '';
 in
