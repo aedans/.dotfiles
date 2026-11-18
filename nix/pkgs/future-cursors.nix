@@ -1,15 +1,17 @@
-# The Future-cursors theme (the Future-cursors submodule), built from its cyan
-# variant the way its build.sh does: the cyan is the accent the workspace-colors
-# extension recolors per workspace, so it has to be a color no other part of a
-# cursor uses.
-{ lib, stdenvNoCC, librsvg, xcursorgen }:
-let
-  src = ../../Future-cursors/src;
-in
+# The Future-cursors theme, built from its cyan variant the way its build.sh
+# does: the cyan is the accent the workspace-colors extension recolors per
+# workspace, so it has to be a color no other part of a cursor uses.
+{ stdenvNoCC, fetchFromGitHub, librsvg, xcursorgen }:
 stdenvNoCC.mkDerivation {
   pname = "future-cursors";
-  version = "1";
-  inherit src;
+  version = "0-unstable-2024-10-07";
+  src = fetchFromGitHub {
+    owner = "aedans";
+    repo = "Future-cursors";
+    rev = "5e225eeeb9842188c5affc6d30ce979ac16b3cb4";
+    hash = "sha256-5imWnG/rIUH/8lzaFbxkn0rGcmWr4GuqipwSa7YAZM4=";
+  };
+  sourceRoot = "source/src";
   nativeBuildInputs = [ librsvg xcursorgen ];
 
   buildPhase = ''
