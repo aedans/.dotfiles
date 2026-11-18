@@ -39,7 +39,7 @@ let
   schemes = map (name:
     let desktop = themes.${name}.desktop; in
     builtins.removeAttrs desktop [ "anchor" ]
-    // { theme = name; cursor = themes.${name}.ui.accentText; }
+    // { theme = name; }
     // lib.optionalAttrs (desktop ? image) { image = crops desktop; }
   ) workspaces;
 

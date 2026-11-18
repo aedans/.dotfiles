@@ -2,10 +2,13 @@
 #   desktop   the workspace's wallpaper (image) and the colors the shell blends
 #             along the workspace switch: background (shown until the image
 #             loads), top bar and the overview's background around the
-#             workspaces (panel, chosen near the tint's overview grey), and
-#             dock. anchor (x and y, 0 to 1 from
-#             the top left) is the part of the image that stays in view when a
-#             screen's shape cuts it; it's centered without one.
+#             workspaces (panel, chosen near the tint's overview grey), dock,
+#             and the cursor's accent (cursor, fully saturated in the theme's
+#             accent hue so the pointer is easy to find, at a relative
+#             luminance of about 0.33 so no workspace's is harder to see).
+#             anchor (x and y, 0 to 1 from the top left) is the part of the
+#             image that stays in view when a screen's shape cuts it; it's
+#             centered without one.
 #   tint      hue (degrees) and HLS saturation the shell theme's greys take
 #   ui        window colors: window, view (content and lists), raised (headerbar,
 #             popovers), sidebar, border, button, hover, text, accent (accent
@@ -20,7 +23,7 @@
   catppuccin = {
     desktop = {
       image = ../../../.config/backgrounds/catppuccin.jpg;
-      background = "#5b4a9e"; panel = "#19192f"; dock = "#1e1e2e";
+      background = "#5b4a9e"; panel = "#19192f"; dock = "#1e1e2e"; cursor = "#d073ff";
     };
     tint = { hue = 240; saturation = 0.3; };
     ui = {
@@ -42,7 +45,7 @@
   nord = {
     desktop = {
       image = ../../../.config/backgrounds/nord.jpg;
-      background = "#3a4ba0"; panel = "#1d222b"; dock = "#2e3440";
+      background = "#3a4ba0"; panel = "#1d222b"; dock = "#2e3440"; cursor = "#00a8d7";
     };
     tint = { hue = 220; saturation = 0.2; };
     ui = {
@@ -64,7 +67,7 @@
   gruvbox = {
     desktop = {
       image = ../../../.config/backgrounds/gruvbox.jpg;
-      background = "#7a3f1d"; panel = "#2c241c"; dock = "#282828";
+      background = "#7a3f1d"; panel = "#2c241c"; dock = "#282828"; cursor = "#ff710b";
     };
     tint = { hue = 30; saturation = 0.22; };
     ui = {
@@ -87,7 +90,7 @@
     desktop = {
       # The dragon, top left.
       image = ../../../.config/backgrounds/everforest.jpg; anchor = { x = 0; y = 0; };
-      background = "#3f6a4a"; panel = "#1e2a26"; dock = "#2d353b";
+      background = "#3f6a4a"; panel = "#1e2a26"; dock = "#2d353b"; cursor = "#5daf00";
     };
     tint = { hue = 160; saturation = 0.18; };
     ui = {
