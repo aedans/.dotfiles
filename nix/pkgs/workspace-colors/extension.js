@@ -2,7 +2,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {enableBackgrounds} from './backgrounds.js';
 import {enableChrome} from './chrome.js';
-import {readSchemes, readThemes} from './schemes.js';
+import {readSchemes} from './schemes.js';
 import {enableShellTheme} from './shellTheme.js';
 import {enableWindowThemes} from './windowThemes.js';
 
@@ -10,11 +10,10 @@ import {enableWindowThemes} from './windowThemes.js';
 export default class WorkspaceColors extends Extension {
     enable() {
         const schemes = readSchemes(this.dir);
-        const themes = readThemes(this.dir);
         this._disablers = [
             enableBackgrounds(schemes),
             enableChrome(schemes),
-            enableShellTheme(schemes, themes),
+            enableShellTheme(schemes),
             enableWindowThemes(schemes),
         ];
     }

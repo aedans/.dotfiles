@@ -3,15 +3,15 @@ import GLib from 'gi://GLib';
 
 import {schemeAt} from './schemes.js';
 
-// Tells GTK applications running the workspace-theme hook which theme each
-// of their windows should wear: its workspace's theme. The hook animates
+// Tells GTK applications running the workspace-theme module which theme each
+// of their windows should wear: its workspace's theme. The module animates
 // the change, so a window moved between workspaces fades to the new theme.
 // Application windows are named by their GTK object path. Dialogs without one,
 // such as file pickers the desktop portal shows for another application, are
 // named by title to the process showing them; other windows without one are
 // left alone, which keeps applications that aren't GNOME's (Firefox, VS
 // Code) as they are while their dialogs follow the workspace. Windows on all
-// workspaces, and processes without the hook, are left alone too.
+// workspaces, and processes without the module, are left alone too.
 
 const OBJECT_PATH = '/org/hans/WorkspaceTheme';
 const INTERFACE = 'org.hans.WorkspaceTheme';
@@ -30,7 +30,7 @@ function call(bus, method, parameters) {
             try {
                 connection.call_finish(result);
             } catch {
-                // The process has no hook, or no such window.
+                // The process has no module, or no such window.
             }
         });
 }

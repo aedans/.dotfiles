@@ -1,0 +1,38 @@
+/* The extension's static rules; default.nix appends a ws-<theme> rule per
+ * theme, which shellTheme.js gives the shell. */
+
+/* While a theme change is in flight, every widget crossfades to its new
+ * colors for the length of a workspace slide; otherwise their own transitions
+ * (hover etc.) are kept. */
+.ws-animating * {
+  transition-duration: 250ms;
+}
+
+/* Painted by chrome.js as their actors' background colors. St's transition
+ * is off: it would crossfade the style set once. */
+#panel,
+#overviewGroup {
+  background-color: transparent;
+  transition-duration: 0ms;
+}
+
+/* Recolored by chrome.js's colorize effect. The border takes its color, as
+ * dash-to-dock's does. */
+#dashtodockContainer #dash .dash-background {
+  background-color: white;
+  border-color: white;
+  transition-duration: 0ms;
+}
+
+/* GNOME gives each dock icon a tile in its own dock's grey, which shows as a
+ * square on any other dock color, and a hover highlight in a fixed lighter
+ * grey. Here the tile is clear and the highlight a translucent white, so it
+ * has the same contrast on every dock. */
+#dash .dash-item-container .show-apps .overview-icon,
+#dash .dash-item-container .overview-tile .overview-icon {
+  background-color: rgba(255, 255, 255, 0);
+}
+#dash .dash-item-container .show-apps:hover .overview-icon,
+#dash .dash-item-container .overview-tile:hover .overview-icon {
+  background-color: rgba(255, 255, 255, 0.1);
+}

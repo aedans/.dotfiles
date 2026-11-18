@@ -3,8 +3,8 @@
 // by their GtkApplication object path (SetWindowTheme). Other windows the
 // shell can see, such as file pickers shown by the desktop portal, have no
 // such path, so they are named by title (SetToplevelTheme), sent to the name
-// org.hans.WorkspaceTheme.P<pid> each hooked process owns. Windows that belong
-// to another follow it (see windows.c).
+// org.hans.WorkspaceTheme.P<pid> each process running the module owns.
+// Windows that belong to another follow it (see windows.c).
 #define G_LOG_DOMAIN "workspace-theme"
 #include <unistd.h>
 
@@ -109,20 +109,19 @@ static void export_object(void)
                                  NULL, NULL, NULL, NULL);
 }
 
-// Called once GTK is initialized: from GApplication's startup signal (whose
-// class handlers, which initialize GTK, have run by then) or after gtk_init.
-// Either may come first, or both.
-G_MODULE_EXPORT void workspace_theme_attach(void)
+// GTK calls this once the default display is open: GTK 3 natively, GTK 4
+// through the GTK_MODULES support patched into it.
+#ifdef MODULE_GTK3
+G_MODULE_EXPORT void gtk_module_init(int *argc, char ***argv)
+#else
+G_MODULE_EXPORT void gtk_module_init(void)
+#endif
 {
-    static gboolean attached;
-    if (attached)
-        return;
-    attached = TRUE;
     add_css_provider(THEME_CSS, PROVIDER_PRIORITY);
     terminal_setup(PROVIDER_PRIORITY);
     windows_setup();
     export_object();
     GApplication *application = g_application_get_default();
-    g_debug("attached to %s", application ? g_application_get_application_id(application)
+    g_debug("loaded into %s", application ? g_application_get_application_id(application)
                                           : g_get_prgname());
 }

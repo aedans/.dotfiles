@@ -1,0 +1,186 @@
+diff --git a/src/st/st-theme-node-private.h b/src/st/st-theme-node-private.h
+index 0fb3646..9f8572a 100644
+--- a/src/st/st-theme-node-private.h
++++ b/src/st/st-theme-node-private.h
+@@ -52,6 +52,10 @@ struct _StThemeNode {
+   CoglColor border_color[4];
+   CoglColor outline_color;
+ 
++  /* See ensure_tint () */
++  float tint_hue;
++  float tint_saturation;
++
+   int border_width[4];
+   int border_radius[4];
+   int outline_width;
+@@ -97,6 +101,8 @@ struct _StThemeNode {
+   guint box_shadow_computed : 1;
+   guint background_image_shadow_computed : 1;
+   guint text_shadow_computed : 1;
++  guint tint_computed : 1;
++  guint has_tint : 1;
+   guint link_type : 2;
+   guint rendered_once : 1;
+   guint cached_textures : 1;
+diff --git a/src/st/st-theme-node.c b/src/st/st-theme-node.c
+index 8b8140f..c5866fc 100644
+--- a/src/st/st-theme-node.c
++++ b/src/st/st-theme-node.c
+@@ -588,9 +588,9 @@ get_color_from_rgba_term (CRTerm    *term,
+   return VALUE_FOUND;
+ }
+ 
+-static GetFromTermResult get_color_from_term (StThemeNode *node,
+-                                              CRTerm      *term,
+-                                              CoglColor   *color);
++static GetFromTermResult get_untinted_color_from_term (StThemeNode *node,
++                                                       CRTerm      *term,
++                                                       CoglColor   *color);
+ 
+ static GetFromTermResult
+ get_color_from_transparentize_term (StThemeNode *node,
+@@ -610,7 +610,7 @@ get_color_from_transparentize_term (StThemeNode *node,
+   if (!amount_arg)
+     return VALUE_NOT_FOUND;
+ 
+-  if (get_color_from_term (node, color_arg, &base_color) != VALUE_FOUND)
++  if (get_untinted_color_from_term (node, color_arg, &base_color) != VALUE_FOUND)
+     return VALUE_NOT_FOUND;
+ 
+   if (amount_arg->type != TERM_NUMBER)
+@@ -657,8 +657,8 @@ get_color_from_mix_term (StThemeNode *node,
+   if (!factor_arg)
+     return VALUE_NOT_FOUND;
+ 
+-  if (get_color_from_term (node, color1_arg, &color1) != VALUE_FOUND ||
+-      get_color_from_term (node, color2_arg, &color2) != VALUE_FOUND)
++  if (get_untinted_color_from_term (node, color1_arg, &color1) != VALUE_FOUND ||
++      get_untinted_color_from_term (node, color2_arg, &color2) != VALUE_FOUND)
+     return VALUE_NOT_FOUND;
+ 
+   if (factor_arg->type != TERM_NUMBER)
+@@ -711,7 +711,7 @@ get_color_from_lighten_term (StThemeNode *node,
+   if (!factor_arg)
+     return VALUE_NOT_FOUND;
+ 
+-  if (get_color_from_term (node, color_arg, &base_color) != VALUE_FOUND)
++  if (get_untinted_color_from_term (node, color_arg, &base_color) != VALUE_FOUND)
+     return VALUE_NOT_FOUND;
+ 
+   if (factor_arg->type != TERM_NUMBER)
+@@ -755,7 +755,7 @@ get_color_from_darken_term (StThemeNode *node,
+   if (!factor_arg)
+     return VALUE_NOT_FOUND;
+ 
+-  if (get_color_from_term (node, color_arg, &base_color) != VALUE_FOUND)
++  if (get_untinted_color_from_term (node, color_arg, &base_color) != VALUE_FOUND)
+     return VALUE_NOT_FOUND;
+ 
+   if (factor_arg->type != TERM_NUMBER)
+@@ -782,9 +782,9 @@ get_color_from_darken_term (StThemeNode *node,
+ }
+ 
+ static GetFromTermResult
+-get_color_from_term (StThemeNode  *node,
+-                     CRTerm       *term,
+-                     CoglColor    *color)
++get_untinted_color_from_term (StThemeNode  *node,
++                              CRTerm       *term,
++                              CoglColor    *color)
+ {
+   CRRgb rgb;
+   enum CRStatus status;
+@@ -804,13 +804,15 @@ get_color_from_term (StThemeNode  *node,
+   /* St-specific extension: -st-accent-color */
+   else if (term_is_accent_color (term))
+     {
+-      st_theme_context_get_accent_color (node->context, color, NULL);
++      if (!st_theme_node_lookup_color (node, "-st-tint-accent-color", TRUE, color))
++        st_theme_context_get_accent_color (node->context, color, NULL);
+       return VALUE_FOUND;
+     }
+   /* St-specific extension: -st-accent-fg-color */
+   else if (term_is_accent_fg_color (term))
+     {
+-      st_theme_context_get_accent_color (node->context, NULL, color);
++      if (!st_theme_node_lookup_color (node, "-st-tint-accent-fg-color", TRUE, color))
++        st_theme_context_get_accent_color (node->context, NULL, color);
+       return VALUE_FOUND;
+     }
+   /* rgba () colors - a CSS3 addition, are not supported by libcroco,
+@@ -877,6 +879,75 @@ get_color_from_term (StThemeNode  *node,
+   return VALUE_FOUND;
+ }
+ 
++/* St-specific extension: a tint and an accent, inherited like font
++ * properties, so that one rule on an ancestor recolors everything below it.
++ *
++ *   -st-tint-hue: <degrees>; -st-tint-saturation: <0..1>
++ *     Neutral greys take this hue and saturation and keep their lightness.
++ *     The tint fades out towards white, so whites stay white.
++ *   -st-tint-accent-color, -st-tint-accent-fg-color: <color>
++ *     What -st-accent-color and -st-accent-fg-color stand for, in place of
++ *     the system accent.
++ */
++
++/* Below this saturation a color counts as a neutral grey. */
++#define TINT_NEUTRAL_SATURATION 0.12
++/* Above this lightness the tint fades out. */
++#define TINT_FADE_LIGHTNESS 0.9
++
++static void
++ensure_tint (StThemeNode *node)
++{
++  double hue, saturation;
++
++  if (node->tint_computed)
++    return;
++
++  node->tint_computed = TRUE;
++  node->has_tint =
++    st_theme_node_lookup_double (node, "-st-tint-hue", TRUE, &hue) &&
++    st_theme_node_lookup_double (node, "-st-tint-saturation", TRUE, &saturation);
++
++  if (node->has_tint)
++    {
++      node->tint_hue = hue;
++      node->tint_saturation = saturation;
++    }
++}
++
++static void
++tint_color (StThemeNode *node,
++            CoglColor   *color)
++{
++  float hue, saturation, lightness, fade;
++  uint8_t alpha = color->alpha;
++
++  ensure_tint (node);
++  if (!node->has_tint)
++    return;
++
++  cogl_color_to_hsl (color, &hue, &saturation, &lightness);
++  if (saturation > TINT_NEUTRAL_SATURATION)
++    return;
++
++  fade = MIN (1.0, (1.0 - lightness) / (1.0 - TINT_FADE_LIGHTNESS));
++  cogl_color_init_from_hsl (color, node->tint_hue, node->tint_saturation * fade, lightness);
++  color->alpha = alpha;
++}
++
++static GetFromTermResult
++get_color_from_term (StThemeNode  *node,
++                     CRTerm       *term,
++                     CoglColor    *color)
++{
++  GetFromTermResult result = get_untinted_color_from_term (node, term, color);
++
++  if (result == VALUE_FOUND)
++    tint_color (node, color);
++
++  return result;
++}
++
+ /**
+  * st_theme_node_lookup_color:
+  * @node: a #StThemeNode

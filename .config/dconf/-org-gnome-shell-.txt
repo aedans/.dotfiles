@@ -30,7 +30,7 @@ apply-custom-theme=false
 apply-glossy-effect=false
 background-color='rgb(30,30,46)'
 background-opacity=1.0
-custom-background-color=true
+custom-background-color=false
 custom-theme-customize-running-dots=false
 custom-theme-shrink=false
 dash-max-icon-size=64
@@ -55,7 +55,7 @@ show-running=true
 show-show-apps-button=false
 show-trash=false
 show-windows-preview=true
-transparency-mode='FIXED'
+transparency-mode='DEFAULT'
 unity-backlit-items=false
 workspace-agnostic-urgent-windows=true
 

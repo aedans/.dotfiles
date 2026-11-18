@@ -1,4 +1,4 @@
-# The GTK hook's stylesheets and terminal palettes, generated from themes (see
+# The GTK module's stylesheets and terminal palettes, generated from themes (see
 # themes.nix). Windows without a theme (e.g. on all workspaces) wear the
 # default theme's colors.
 { lib, themes, default }:

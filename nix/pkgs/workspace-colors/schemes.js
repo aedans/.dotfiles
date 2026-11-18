@@ -1,23 +1,15 @@
-// schemes.json: one scheme per workspace, every field optional; workspaces
-// past the end wrap around.
-//   background, panel, dock    CSS colors
+// schemes.json: one scheme per workspace; workspaces past the end wrap
+// around. Only panel and dock are required.
+//   panel, dock, background    CSS colors
 //   image     wallpaper crops, one per screen shape: [{aspect, file}]; each
 //             monitor shows the closest, over the background color
-//   theme     names a theme: the ws-<theme> class given to the shell and to
-//             windows of applications running the GTK hook
-
-function readJson(dir, name) {
-    const [, bytes] = dir.get_child(name).load_contents(null);
-    return JSON.parse(new TextDecoder().decode(bytes));
-}
+//   theme     names a theme: the ws-<theme> class given to the shell (see
+//             stylesheet.css) and to windows of applications running the GTK
+//             module
 
 export function readSchemes(dir) {
-    return readJson(dir, 'schemes.json');
-}
-
-// themes.json: {name: theme}; see scopedCss.js.
-export function readThemes(dir) {
-    return readJson(dir, 'themes.json');
+    const [, bytes] = dir.get_child('schemes.json').load_contents(null);
+    return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 export function schemeAt(schemes, index) {

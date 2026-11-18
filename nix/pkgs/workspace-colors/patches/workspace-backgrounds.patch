@@ -1,0 +1,282 @@
+diff --git a/js/ui/background.js b/js/ui/background.js
+index aa38f85..b0762c1 100644
+--- a/js/ui/background.js
++++ b/js/ui/background.js
+@@ -130,6 +130,22 @@ const ANIMATION_MIN_WAKEUP_INTERVAL = 1.0;
+ 
+ let _backgroundCache = null;
+ 
++// Backgrounds shown on particular workspaces in place of the settings' one:
++// (workspaceIndex, monitor) => {file, color}, or null for the settings' one.
++let _workspaceBackgrounds = null;
++const _workspaceBackgroundsChanged = new Signals.EventEmitter();
++
++/**
++ * Shows each workspace's background as lookup gives it; null gives every
++ * workspace the settings' background again.
++ *
++ * @param {Function | null} lookup
++ */
++export function setWorkspaceBackgrounds(lookup) {
++    _workspaceBackgrounds = lookup;
++    _workspaceBackgroundsChanged.emit('changed');
++}
++
+ function _fileEqual0(file1, file2) {
+     if (file1 === file2)
+         return true;
+@@ -244,6 +260,7 @@ const Background = GObject.registerClass({
+             settings: null,
+             file: null,
+             style: null,
++            color: null,
+         });
+ 
+         super._init({meta_display: global.display});
+@@ -251,6 +268,7 @@ const Background = GObject.registerClass({
+         this._settings = params.settings;
+         this._file = params.file;
+         this._style = params.style;
++        this._color = params.color;
+         this._monitorIndex = params.monitorIndex;
+         this._layoutManager = params.layoutManager;
+         this._fileWatches = {};
+@@ -274,11 +292,15 @@ const Background = GObject.registerClass({
+                 this._refreshAnimation();
+             }, this);
+ 
+-        this._settings.connectObject('changed',
+-            this._emitChangedSignal.bind(this), this);
++        // A workspace's background, given its own color, doesn't follow
++        // the settings.
++        if (!this._color) {
++            this._settings.connectObject('changed',
++                this._emitChangedSignal.bind(this), this);
+ 
+-        this._interfaceSettings.connectObject(`changed::${COLOR_SCHEME_KEY}`,
+-            this._emitChangedSignal.bind(this), this);
++            this._interfaceSettings.connectObject(`changed::${COLOR_SCHEME_KEY}`,
++                this._emitChangedSignal.bind(this), this);
++        }
+ 
+         this._load();
+     }
+@@ -347,6 +369,11 @@ const Background = GObject.registerClass({
+     }
+ 
+     _loadPattern() {
++        if (this._color) {
++            this.set_color(this._color);
++            return;
++        }
++
+         let colorString = this._settings.get_string(PRIMARY_COLOR_KEY);
+         const [, color] = Cogl.Color.from_string(colorString);
+         colorString = this._settings.get_string(SECONDARY_COLOR_KEY);
+@@ -553,6 +580,7 @@ class BackgroundSource {
+         this._overrideImage = GLib.getenv('SHELL_BACKGROUND_IMAGE');
+         this._settings = new Gio.Settings({schema_id: settingsSchema});
+         this._backgrounds = [];
++        this._workspaceBackgrounds = new Map();
+ 
+         const monitorManager = global.backend.get_monitor_manager();
+         this._monitorsChangedId =
+@@ -576,7 +604,12 @@ class BackgroundSource {
+         }
+     }
+ 
+-    getBackground(monitorIndex) {
++    getBackground(monitorIndex, workspaceIndex) {
++        const workspaceBackground =
++            _workspaceBackgrounds?.(workspaceIndex, this._layoutManager.monitors[monitorIndex]);
++        if (workspaceBackground)
++            return this._getWorkspaceBackground(workspaceBackground);
++
+         let file = null;
+         let style;
+ 
+@@ -628,6 +661,29 @@ class BackgroundSource {
+         return this._backgrounds[monitorIndex];
+     }
+ 
++    _getWorkspaceBackground({file, color}) {
++        const key = `${file?.get_uri()} ${color.to_string()}`;
++        if (!this._workspaceBackgrounds.has(key)) {
++            const background = new Background({
++                layoutManager: this._layoutManager,
++                settings: this._settings,
++                file,
++                style: GDesktopEnums.BackgroundStyle.ZOOM,
++                color,
++            });
++
++            background._changedId = background.connect('bg-changed', () => {
++                background.disconnect(background._changedId);
++                background.destroy();
++                this._workspaceBackgrounds.delete(key);
++            });
++
++            this._workspaceBackgrounds.set(key, background);
++        }
++
++        return this._workspaceBackgrounds.get(key);
++    }
++
+     destroy() {
+         const monitorManager = global.backend.get_monitor_manager();
+         monitorManager.disconnect(this._monitorsChangedId);
+@@ -638,7 +694,13 @@ class BackgroundSource {
+             background.destroy();
+         }
+ 
++        for (const background of this._workspaceBackgrounds.values()) {
++            background.disconnect(background._changedId);
++            background.destroy();
++        }
++
+         this._backgrounds = null;
++        this._workspaceBackgrounds = null;
+     }
+ }
+ 
+@@ -688,6 +750,7 @@ export class BackgroundManager extends Signals.EventEmitter {
+             container: null,
+             layoutManager: Main.layoutManager,
+             monitorIndex: null,
++            workspace: null,
+             vignette: false,
+             controlPosition: true,
+             settingsSchema: BACKGROUND_SCHEMA,
+@@ -702,14 +765,41 @@ export class BackgroundManager extends Signals.EventEmitter {
+         this._layoutManager = params.layoutManager;
+         this._vignette = params.vignette;
+         this._monitorIndex = params.monitorIndex;
++        // The workspace whose background this shows; without one, the
++        // active workspace's.
++        this._workspace = params.workspace;
+         this._controlPosition = params.controlPosition;
+         this._useContentSize = params.useContentSize;
+ 
+         this.backgroundActor = this._createBackgroundActor();
+         this._newBackgroundActor = null;
++
++        _workspaceBackgroundsChanged.connectObject('changed',
++            () => this._updateBackgroundActor(), this);
++        if (!this._workspace) {
++            global.workspace_manager.connectObject('active-workspace-changed',
++                () => this._followActiveWorkspace(), this);
++        }
++    }
++
++    _getBackground() {
++        const workspaceIndex = this._workspace?.index() ??
++            global.workspace_manager.get_active_workspace_index();
++        return this._backgroundSource.getBackground(this._monitorIndex, workspaceIndex);
++    }
++
++    // Switches without a fade once the workspace's background has loaded, so
++    // the desktop doesn't show its bare color in between.
++    _followActiveWorkspace() {
++        const shown = (this._newBackgroundActor ?? this.backgroundActor).content.background;
++        if (this._getBackground() !== shown)
++            this._updateBackgroundActor(false);
+     }
+ 
+     destroy() {
++        _workspaceBackgroundsChanged.disconnectObject(this);
++        global.workspace_manager.disconnectObject(this);
++
+         const cache = getBackgroundCache();
+         cache.releaseBackgroundSource(this._settingsSchema);
+         this._backgroundSource = null;
+@@ -725,13 +815,13 @@ export class BackgroundManager extends Signals.EventEmitter {
+         }
+     }
+ 
+-    _swapBackgroundActor() {
++    _swapBackgroundActor(fade) {
+         const oldBackgroundActor = this.backgroundActor;
+         this.backgroundActor = this._newBackgroundActor;
+         this._newBackgroundActor = null;
+         this.emit('changed');
+ 
+-        if (Main.layoutManager.screenTransition.visible) {
++        if (!fade || Main.layoutManager.screenTransition.visible) {
+             oldBackgroundActor.destroy();
+             return;
+         }
+@@ -744,7 +834,7 @@ export class BackgroundManager extends Signals.EventEmitter {
+         });
+     }
+ 
+-    _updateBackgroundActor() {
++    _updateBackgroundActor(fade = true) {
+         if (this._newBackgroundActor) {
+             /* Skip displaying existing background queued for load */
+             this._newBackgroundActor.destroy();
+@@ -766,20 +856,20 @@ export class BackgroundManager extends Signals.EventEmitter {
+         const {background} = newBackgroundActor.content;
+ 
+         if (background.isLoaded) {
+-            this._swapBackgroundActor();
++            this._swapBackgroundActor(fade);
+         } else {
+             newBackgroundActor.loadedSignalId = background.connect('loaded',
+                 () => {
+                     background.disconnect(newBackgroundActor.loadedSignalId);
+                     newBackgroundActor.loadedSignalId = 0;
+ 
+-                    this._swapBackgroundActor();
++                    this._swapBackgroundActor(fade);
+                 });
+         }
+     }
+ 
+     _createBackgroundActor() {
+-        const background = this._backgroundSource.getBackground(this._monitorIndex);
++        const background = this._getBackground();
+         const backgroundActor = new Meta.BackgroundActor({
+             meta_display: global.display,
+             monitor: this._monitorIndex,
+diff --git a/js/ui/workspace.js b/js/ui/workspace.js
+index 3c8ed9f..eddee8d 100644
+--- a/js/ui/workspace.js
++++ b/js/ui/workspace.js
+@@ -941,7 +941,7 @@ export const WorkspaceLayout = GObject.registerClass({
+ 
+ export const WorkspaceBackground = GObject.registerClass(
+ class WorkspaceBackground extends Shell.WorkspaceBackground {
+-    _init(monitorIndex, stateAdjustment) {
++    _init(metaWorkspace, monitorIndex, stateAdjustment) {
+         super._init({
+             style_class: 'workspace-background',
+             x_expand: true,
+@@ -978,6 +978,7 @@ class WorkspaceBackground extends Shell.WorkspaceBackground {
+         this._bgManager = new Background.BackgroundManager({
+             container: this._backgroundGroup,
+             monitorIndex: this._monitorIndex,
++            workspace: metaWorkspace,
+             controlPosition: false,
+             useContentSize: false,
+         });
+@@ -1047,7 +1048,7 @@ class Workspace extends St.Widget {
+ 
+         // Background
+         this._background =
+-            new WorkspaceBackground(monitorIndex, layoutManager.stateAdjustment);
++            new WorkspaceBackground(metaWorkspace, monitorIndex, layoutManager.stateAdjustment);
+         this.add_child(this._background);
+ 
+         // Window previews
+diff --git a/js/ui/workspaceAnimation.js b/js/ui/workspaceAnimation.js
+index fcfda8a..6b4b003 100644
+--- a/js/ui/workspaceAnimation.js
++++ b/js/ui/workspaceAnimation.js
+@@ -180,6 +180,7 @@ class WorkspaceBackground extends BaseWorkspaceGroup {
+         this._bgManager = new Background.BackgroundManager({
+             container: background,
+             monitorIndex: this._monitor.index,
++            workspace: this._workspace,
+             controlPosition: false,
+         });
+     }

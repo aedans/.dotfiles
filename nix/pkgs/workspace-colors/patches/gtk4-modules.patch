@@ -1,0 +1,96 @@
+diff --git a/gtk/gtkmain.c b/gtk/gtkmain.c
+index 56ab1f0..901e6d8 100644
+--- a/gtk/gtkmain.c
++++ b/gtk/gtkmain.c
+@@ -694,6 +694,9 @@ gtk_init_check (void)
+ 
+   ret = gdk_display_open_default () != NULL;
+ 
++  if (ret)
++    _gtk_modules_init ();
++
+   if (ret && (gtk_get_debug_flags () & GTK_DEBUG_INTERACTIVE))
+     gtk_window_set_interactive_debugging (TRUE);
+ 
+diff --git a/gtk/gtkmodules.c b/gtk/gtkmodules.c
+index 01ad655..80fefd6 100644
+--- a/gtk/gtkmodules.c
++++ b/gtk/gtkmodules.c
+@@ -165,3 +165,65 @@ _gtk_get_module_path (const char *type)
+ 
+   return result;
+ }
++
++typedef void (*GtkModuleInitFunc) (void);
++
++static GModule *
++open_module (const char *name)
++{
++  char **paths;
++  char **path;
++  GModule *module = NULL;
++
++  if (g_path_is_absolute (name))
++    return g_module_open (name, G_MODULE_BIND_LOCAL | G_MODULE_BIND_LAZY);
++
++  paths = _gtk_get_module_path ("modules");
++  for (path = paths; *path && !module; path++)
++    {
++      char *file = g_module_build_path (*path, name);
++
++      if (g_file_test (file, G_FILE_TEST_EXISTS))
++        module = g_module_open (file, G_MODULE_BIND_LOCAL | G_MODULE_BIND_LAZY);
++      g_free (file);
++    }
++  g_strfreev (paths);
++
++  return module;
++}
++
++/**
++ * _gtk_modules_init:
++ *
++ * Loads the modules GTK_MODULES lists, as GTK 3 did: each is a path, or a
++ * name found as lib<name> in the "modules" directories of the module path.
++ * A module's gtk_module_init () runs once the default display is open.
++ */
++void
++_gtk_modules_init (void)
++{
++  const char *modules_env = g_getenv ("GTK_MODULES");
++  char **names;
++  char **name;
++
++  if (!modules_env)
++    return;
++
++  names = split_file_list (modules_env);
++  for (name = names; *name; name++)
++    {
++      GModule *module = open_module (*name);
++      GtkModuleInitFunc init;
++
++      if (!module)
++        {
++          g_message ("Failed to load module \"%s\"", *name);
++          continue;
++        }
++
++      g_module_make_resident (module);
++      if (g_module_symbol (module, "gtk_module_init", (gpointer *) &init))
++        init ();
++    }
++  g_strfreev (names);
++}
+diff --git a/gtk/gtkmodulesprivate.h b/gtk/gtkmodulesprivate.h
+index 24f6bf4..43b5ac0 100644
+--- a/gtk/gtkmodulesprivate.h
++++ b/gtk/gtkmodulesprivate.h
+@@ -29,6 +29,7 @@
+ G_BEGIN_DECLS
+ 
+ char ** _gtk_get_module_path          (const char   *type);
++void    _gtk_modules_init             (void);
+ 
+ /* A version of G_DEFINE_TYPE_WITH_CODE that appends "Builtin"
+  * to the type name. This helps with transition from modules

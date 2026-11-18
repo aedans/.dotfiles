@@ -1,7 +1,8 @@
-# The workspace-colors GNOME Shell extension.
+# The workspace-colors GNOME Shell extension. It needs the shell patched with
+# patches/st-tint.patch and patches/workspace-backgrounds.patch.
 # themes: see themes.nix. workspaces: theme names, one per workspace;
 # workspaces past the end wrap around.
-{ lib, stdenvNoCC, runCommand, imagemagick, nodejs, writeText, themes, workspaces }:
+{ lib, stdenvNoCC, runCommand, imagemagick, writeText, themes, workspaces }:
 let
   uuid = "workspace-colors@hans";
 
@@ -39,32 +40,53 @@ let
     // { theme = name; }
     // lib.optionalAttrs (desktop ? image) { image = crops desktop; }
   ) workspaces;
-  shellThemes = lib.mapAttrs (name: { tint, ui, ... }: {
-    inherit tint;
-    accent = ui.accent;
-    accentForeground = ui.accentForeground;
-  }) themes;
+
+  # A theme's tint and accent, as St's inherited tint properties (see
+  # patches/st-tint.patch).
+  tintDeclarations = { tint, ui, ... }: ''
+    -st-tint-hue: ${toString tint.hue};
+    -st-tint-saturation: ${toString tint.saturation};
+    -st-tint-accent-color: ${ui.accent};
+    -st-tint-accent-fg-color: ${ui.accentForeground};
+  '';
+  themeRules = lib.concatStrings (lib.mapAttrsToList (name: theme: ''
+
+    .ws-${name} {
+    ${tintDeclarations theme}}
+  '') themes);
+
+  # The first workspace's colors for the whole shell, for a stylesheet the
+  # shell loads before extensions (see session-mode.nix). The extension's own
+  # rules for the same widgets come later, so they win once it loads.
+  first = themes.${lib.head workspaces};
+  startupCss = ''
+
+    stage {
+    ${tintDeclarations first}}
+    #panel,
+    #overviewGroup {
+      background-color: ${first.desktop.panel};
+    }
+    #dash .dash-background {
+      background-color: ${first.desktop.dock};
+    }
+  '';
 in
-stdenvNoCC.mkDerivation (finalAttrs: {
+stdenvNoCC.mkDerivation {
   pname = "gnome-shell-extension-workspace-colors";
   version = "1";
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [ ./metadata.json ./bake.mjs (lib.fileset.fileFilter (f: f.hasExt "js") ./.) ];
+    fileset = lib.fileset.unions [ ./metadata.json ./stylesheet.css (lib.fileset.fileFilter (f: f.hasExt "js") ./.) ];
   };
   installPhase = ''
     dir=$out/share/gnome-shell/extensions/${uuid}
     install -Dm644 -t $dir metadata.json *.js
     install -Dm644 ${writeText "schemes.json" (builtins.toJSON schemes)} $dir/schemes.json
-    install -Dm644 ${writeText "themes.json" (builtins.toJSON shellThemes)} $dir/themes.json
+    cat stylesheet.css ${writeText "themes.css" themeRules} > $dir/stylesheet.css
   '';
   passthru = {
     extensionUuid = uuid;
-    # A command printing the block that bakes the first workspace's colors
-    # into a shell stylesheet (see bake.mjs), given as a shell word.
-    bakeCommand = stylesheet: "${lib.escapeShellArgs [
-      (lib.getExe nodejs)
-      "${finalAttrs.src}/bake.mjs"
-    ]} ${stylesheet} ${lib.escapeShellArg "${finalAttrs.finalPackage}/share/gnome-shell/extensions/${uuid}"}";
+    inherit startupCss;
   };
-})
+}
