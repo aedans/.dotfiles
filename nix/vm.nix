@@ -8,11 +8,6 @@
 # it. The guest journal is mirrored to vm-journal/journal.txt next to the disk.
 { pkgs, lib, ... }:
 let
-  # What bootstrap.sh puts in ~/.local/share/icons on the host.
-  futureCursors = pkgs.runCommand "future-cursors" { } ''
-    mkdir -p $out/share/icons
-    cp -r ${../Future-cursors/dist} $out/share/icons/Future-cursors
-  '';
   colloidIcons = pkgs.colloid-icon-theme.override { schemeVariants = [ "nord" ]; };
 
   # What bootstrap.sh dconf-loads on the host, as one keyfile directory with
@@ -46,6 +41,9 @@ in
       serviceConfig.ExecStart = "${pkgs.bash}/bin/bash -c 'journalctl -b -f -o short-monotonic > /mnt/journal/journal.txt'";
     };
     environment.sessionVariables.G_MESSAGES_DEBUG = "workspace-theme";
+    # QEMU's window shows the guest's hardware cursor with red and blue
+    # swapped, so the guest draws its cursor itself.
+    environment.sessionVariables.MUTTER_DEBUG_DISABLE_HW_CURSORS = "1";
 
     # The guest's GPU is virtio, not the host's NVIDIA card.
     services.xserver.videoDrivers = lib.mkForce [ "modesetting" ];
@@ -60,7 +58,7 @@ in
     services.gnome.gnome-initial-setup.enable = false;
     users.users.hans = {
       password = "hans";
-      packages = [ futureCursors colloidIcons ];
+      packages = [ colloidIcons ];
     };
 
     # Earlier databases win, so the VM's shortcuts come before the dumps.

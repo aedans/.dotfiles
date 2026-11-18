@@ -69,12 +69,13 @@ let
       color: var(--popover-fg-color);
     }
 
-    /* Only while a theme change is in flight, so hover effects keep their speed. */
+    /* Only while a theme change is in flight, so hover effects keep their speed.
+     * As long as the workspace slide, and eased like it (ease-out cubic). */
     window.ws-animating,
     window.ws-animating * {
       transition-property: background-color, color, border-color, outline-color, box-shadow, filter;
-      transition-duration: 400ms;
-      transition-timing-function: ease-in-out;
+      transition-duration: 250ms;
+      transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
     }
   '';
 
@@ -175,12 +176,13 @@ let
 
   gtk3 = forThemes gtk3Theme + ''
 
-    /* Only while a theme change is in flight, so hover effects keep their speed. */
+    /* Only while a theme change is in flight, so hover effects keep their speed.
+     * As long as the workspace slide, and eased like it (ease-out cubic). */
     .ws-animating,
     .ws-animating * {
       transition-property: background-color, color, border-color, box-shadow;
-      transition-duration: 400ms;
-      transition-timing-function: ease-in-out;
+      transition-duration: 250ms;
+      transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
     }
   '';
 in

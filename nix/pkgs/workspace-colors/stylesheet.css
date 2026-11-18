@@ -2,8 +2,8 @@
  * theme, which shellTheme.js gives the shell. */
 
 /* While a theme change is in flight, every widget crossfades to its new
- * colors for the length of a workspace slide; otherwise their own transitions
- * (hover etc.) are kept. */
+ * colors as long as the top bar's and GTK applications' fades take (see
+ * fade.js); otherwise their own transitions (hover etc.) are kept. */
 .ws-animating * {
   transition-duration: 250ms;
 }

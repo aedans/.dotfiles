@@ -1,6 +1,6 @@
 # A color theme per workspace (see nix/pkgs/workspace-colors): the shell
 # through its extension, GTK applications through a GTK module loaded into
-# each of them. Applications that aren't GTK's (Firefox, VS Code, games) keep
+# each of them, and the cursor theme's accent through mutter. Applications that aren't GTK's (Firefox, VS Code, games) keep
 # their own look; their dialogs follow the workspace. The session's shell runs
 # in a mode of its own whose stylesheet has the first workspace's colors, so
 # it starts in them. Try changes in the VM first (see nix/vm.nix).
@@ -8,8 +8,10 @@
 let
   dir = ../pkgs/workspace-colors;
   themes = import (dir + "/themes.nix");
+  cursors = pkgs.callPackage ../pkgs/future-cursors.nix { };
   extension = pkgs.callPackage dir {
     inherit themes;
+    cursorAccent = cursors.accent;
     workspaces = [ "catppuccin" "nord" "gruvbox" "everforest" ];
   };
   stylesheets = import (dir + "/stylesheets.nix") {
@@ -25,9 +27,13 @@ let
   sessionMode = pkgs.callPackage (dir + "/session-mode.nix") { inherit extension; };
 in
 {
-  # St's tint and per-workspace backgrounds, which the extension builds on.
+  # St's tint, per-workspace backgrounds and recolored cursors, which the
+  # extension builds on.
   nixpkgs.overlays = [
     (final: prev: {
+      mutter = prev.mutter.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ (dir + "/patches/cursor-recolor.patch") ];
+      });
       gnome-shell = prev.gnome-shell.overrideAttrs (old: {
         patches = (old.patches or [ ]) ++ [
           (dir + "/patches/st-tint.patch")
@@ -46,7 +52,7 @@ in
     });
   }];
 
-  users.users.hans.packages = [ extension ];
+  users.users.hans.packages = [ extension cursors ];
   # GTK finds the module through GTK_PATH, which covers the system profile.
   environment.systemPackages = [ sessionMode gtkModule ];
   environment.sessionVariables.GTK_MODULES = [ gtkModule.moduleName ];

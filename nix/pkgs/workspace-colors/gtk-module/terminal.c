@@ -19,7 +19,7 @@
 #define FADE_KEY "workspace-theme-fade"
 #define THEME_KEY "workspace-theme"
 // Matches the stylesheet's transitions.
-#define FADE_US (400 * G_TIME_SPAN_MILLISECOND)
+#define FADE_US (250 * G_TIME_SPAN_MILLISECOND)
 
 typedef struct {
     GdkRGBA foreground;
@@ -60,9 +60,9 @@ static gboolean parse_colors(GKeyFile *file, const char *theme, Colors *colors)
     return TRUE;
 }
 
-static float ease_in_out(float t)
+static float ease_out(float t)
 {
-    return t < 0.5f ? 4 * t * t * t : 1 - powf(-2 * t + 2, 3) / 2;
+    return 1 - powf(1 - t, 3);
 }
 
 static GdkRGBA mix_rgba(const GdkRGBA *a, const GdkRGBA *b, float t)
@@ -98,7 +98,7 @@ static gboolean fade_tick(GtkWidget *terminal, GdkFrameClock *clock, gpointer da
     if (!fade->start)
         fade->start = now;
     float t = MIN(1.0f, (float)(now - fade->start) / FADE_US);
-    Colors colors = mix(&fade->from, &fade->to, ease_in_out(t));
+    Colors colors = mix(&fade->from, &fade->to, ease_out(t));
     show(terminal, &colors);
     if (t < 1.0f)
         return G_SOURCE_CONTINUE;

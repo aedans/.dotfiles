@@ -3,6 +3,7 @@
 //   panel, dock, background    CSS colors
 //   image     wallpaper crops, one per screen shape: [{aspect, file}]; each
 //             monitor shows the closest, over the background color
+//   cursor    the color the cursor theme's accent takes (see cursor.js)
 //   theme     names a theme: the ws-<theme> class given to the shell (see
 //             stylesheet.css) and to windows of applications running the GTK
 //             module

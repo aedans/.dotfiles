@@ -11,7 +11,6 @@ fi
 
 nix-shell -p sassc --command "bash ./Colloid-gtk-theme/install.sh --tweaks nord -c dark"
 bash ./Colloid-icon-theme/install.sh --scheme nord
-(cd Future-cursors; bash install.sh)
 
 sudo nixos-rebuild switch --flake .#$1 --impure
 

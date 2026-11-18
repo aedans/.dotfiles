@@ -1,8 +1,10 @@
 # The workspace-colors GNOME Shell extension. It needs the shell patched with
-# patches/st-tint.patch and patches/workspace-backgrounds.patch.
+# patches/st-tint.patch and patches/workspace-backgrounds.patch, and mutter
+# with patches/cursor-recolor.patch.
 # themes: see themes.nix. workspaces: theme names, one per workspace;
-# workspaces past the end wrap around.
-{ lib, stdenvNoCC, runCommand, imagemagick, writeText, themes, workspaces }:
+# workspaces past the end wrap around. cursorAccent: the color the cursor
+# theme draws its accent with, which each workspace recolors.
+{ lib, stdenvNoCC, runCommand, imagemagick, writeText, themes, workspaces, cursorAccent }:
 let
   uuid = "workspace-colors@hans";
 
@@ -37,7 +39,7 @@ let
   schemes = map (name:
     let desktop = themes.${name}.desktop; in
     builtins.removeAttrs desktop [ "anchor" ]
-    // { theme = name; }
+    // { theme = name; cursor = themes.${name}.ui.accentText; }
     // lib.optionalAttrs (desktop ? image) { image = crops desktop; }
   ) workspaces;
 
@@ -83,6 +85,7 @@ stdenvNoCC.mkDerivation {
     dir=$out/share/gnome-shell/extensions/${uuid}
     install -Dm644 -t $dir metadata.json *.js
     install -Dm644 ${writeText "schemes.json" (builtins.toJSON schemes)} $dir/schemes.json
+    install -Dm644 ${writeText "cursor.json" (builtins.toJSON { accent = cursorAccent; })} $dir/cursor.json
     cat stylesheet.css ${writeText "themes.css" themeRules} > $dir/stylesheet.css
   '';
   passthru = {

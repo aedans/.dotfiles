@@ -1,0 +1,445 @@
+diff --git a/src/backends/meta-backend.c b/src/backends/meta-backend.c
+index 90bcc8e..90b274a 100644
+--- a/src/backends/meta-backend.c
++++ b/src/backends/meta-backend.c
+@@ -373,6 +373,34 @@ update_cursors (MetaBackend *backend)
+                                 backend);
+ }
+ 
++static gboolean
++redraw_cursor_foreach_cb (ClutterStage  *stage,
++                          ClutterSprite *sprite,
++                          gpointer       user_data)
++{
++  MetaBackend *backend = user_data;
++  MetaCursorRenderer *cursor_renderer;
++
++  cursor_renderer = meta_backend_get_cursor_renderer_for_sprite (backend,
++                                                                 sprite);
++  if (cursor_renderer)
++    meta_cursor_renderer_force_update (cursor_renderer);
++
++  return TRUE;
++}
++
++/* Recoloring changes the cursors' textures, not which cursors are shown, so
++ * they are drawn again without being picked anew. */
++static void
++redraw_cursors (MetaBackend *backend)
++{
++  MetaBackendPrivate *priv = meta_backend_get_instance_private (backend);
++
++  clutter_stage_foreach_sprite (CLUTTER_STAGE (priv->stage),
++                                redraw_cursor_foreach_cb,
++                                backend);
++}
++
+ void
+ meta_backend_monitors_changed (MetaBackend *backend)
+ {
+@@ -1272,6 +1300,13 @@ on_cursor_prefs_changed (MetaCursorTracker *cursor_tracker,
+   update_cursors (backend);
+ }
+ 
++static void
++on_cursor_recolor_changed (MetaCursorTracker *cursor_tracker,
++                        MetaBackend       *backend)
++{
++  redraw_cursors (backend);
++}
++
+ static gboolean
+ meta_backend_initable_init (GInitable     *initable,
+                             GCancellable  *cancellable,
+@@ -1361,6 +1396,9 @@ meta_backend_initable_init (GInitable     *initable,
+   g_signal_connect_object (priv->cursor_tracker, "cursor-prefs-changed",
+                            G_CALLBACK (on_cursor_prefs_changed), backend,
+                            G_CONNECT_AFTER);
++  g_signal_connect_object (priv->cursor_tracker, "cursor-recolor-changed",
++                           G_CALLBACK (on_cursor_recolor_changed), backend,
++                           G_CONNECT_AFTER);
+ 
+   g_signal_connect_object (priv->default_seat, "device-added",
+                            G_CALLBACK (on_device_added), backend, 0);
+diff --git a/src/backends/meta-cursor-tracker-private.h b/src/backends/meta-cursor-tracker-private.h
+index d045f7e..6692dfb 100644
+--- a/src/backends/meta-cursor-tracker-private.h
++++ b/src/backends/meta-cursor-tracker-private.h
+@@ -39,3 +39,7 @@ void meta_cursor_tracker_invalidate_position (MetaCursorTracker *tracker);
+ MetaBackend * meta_cursor_tracker_get_backend (MetaCursorTracker *tracker);
+ 
+ void meta_cursor_tracker_destroy (MetaCursorTracker *tracker);
++
++gboolean meta_cursor_tracker_get_recolor (MetaCursorTracker *tracker,
++                                          CoglColor         *from,
++                                          CoglColor         *to);
+diff --git a/src/backends/meta-cursor-tracker.c b/src/backends/meta-cursor-tracker.c
+index 5e446f2..b819b7c 100644
+--- a/src/backends/meta-cursor-tracker.c
++++ b/src/backends/meta-cursor-tracker.c
+@@ -65,6 +65,10 @@ typedef struct _MetaCursorTrackerPrivate
+ 
+   float x;
+   float y;
++
++  gboolean has_recolor;
++  CoglColor recolor_from;
++  CoglColor recolor_to;
+ } MetaCursorTrackerPrivate;
+ 
+ G_DEFINE_TYPE_WITH_PRIVATE (MetaCursorTracker, meta_cursor_tracker,
+@@ -76,6 +80,7 @@ enum
+   POSITION_INVALIDATED,
+   VISIBILITY_CHANGED,
+   CURSOR_PREFS_CHANGED,
++  CURSOR_RECOLOR_CHANGED,
+   LAST_SIGNAL
+ };
+ 
+@@ -312,6 +317,12 @@ meta_cursor_tracker_class_init (MetaCursorTrackerClass *klass)
+                                                 G_SIGNAL_RUN_LAST,
+                                                 0, NULL, NULL, NULL,
+                                                 G_TYPE_NONE, 0);
++
++  signals[CURSOR_RECOLOR_CHANGED] = g_signal_new ("cursor-recolor-changed",
++                                                  G_TYPE_FROM_CLASS (klass),
++                                                  G_SIGNAL_RUN_LAST,
++                                                  0, NULL, NULL, NULL,
++                                                  G_TYPE_NONE, 0);
+ }
+ 
+ /**
+@@ -467,3 +478,65 @@ meta_cursor_tracker_get_backend (MetaCursorTracker *tracker)
+ 
+   return priv->backend;
+ }
++
++/**
++ * meta_cursor_tracker_set_recolor:
++ * @tracker: a #MetaCursorTracker
++ * @from: (nullable): a color the cursor theme draws its cursors with
++ * @to: (nullable): the color to draw them with instead
++ *
++ * Recolors the cursors drawn from the cursor theme: their pixels of @from,
++ * including where it blends into white, black or a grey, take @to in its
++ * place. Other colors are left alone, so @from should be one only the parts
++ * to recolor use. %NULL for either shows the cursors as the theme draws them.
++ * Cursors that clients draw themselves are left alone.
++ */
++void
++meta_cursor_tracker_set_recolor (MetaCursorTracker *tracker,
++                                 const CoglColor   *from,
++                                 const CoglColor   *to)
++{
++  MetaCursorTrackerPrivate *priv;
++
++  g_return_if_fail (META_IS_CURSOR_TRACKER (tracker));
++
++  priv = meta_cursor_tracker_get_instance_private (tracker);
++
++  if (from && to)
++    {
++      if (priv->has_recolor &&
++          cogl_color_equal (&priv->recolor_from, from) &&
++          cogl_color_equal (&priv->recolor_to, to))
++        return;
++
++      priv->has_recolor = TRUE;
++      priv->recolor_from = *from;
++      priv->recolor_to = *to;
++    }
++  else
++    {
++      if (!priv->has_recolor)
++        return;
++
++      priv->has_recolor = FALSE;
++    }
++
++  g_signal_emit (tracker, signals[CURSOR_RECOLOR_CHANGED], 0);
++}
++
++gboolean
++meta_cursor_tracker_get_recolor (MetaCursorTracker *tracker,
++                                 CoglColor         *from,
++                                 CoglColor         *to)
++{
++  MetaCursorTrackerPrivate *priv =
++    meta_cursor_tracker_get_instance_private (tracker);
++
++  if (priv->has_recolor)
++    {
++      *from = priv->recolor_from;
++      *to = priv->recolor_to;
++    }
++
++  return priv->has_recolor;
++}
+diff --git a/src/backends/meta-cursor-xcursor.c b/src/backends/meta-cursor-xcursor.c
+index f3eaeec..382c4a9 100644
+--- a/src/backends/meta-cursor-xcursor.c
++++ b/src/backends/meta-cursor-xcursor.c
+@@ -53,6 +53,10 @@ struct _MetaCursorXcursor
+ 
+   int theme_scale;
+   gboolean invalidated;
++  /* The current image's pixels recolored, while the tracker recolors, and
++   * whether they and the texture predate its recoloring. */
++  uint32_t *recolored_pixels;
++  gboolean recolor_stale;
+ };
+ 
+ G_DEFINE_TYPE (MetaCursorXcursor, meta_cursor_xcursor,
+@@ -67,6 +71,21 @@ on_prefs_changed (ClutterCursor *cursor,
+   g_hash_table_remove_all (cache);
+ }
+ 
++/* Cursors are recolored again as they are next realized, so recoloring every
++ * frame only recolors the cursors being shown. */
++static void
++on_recolor_changed (MetaCursorTracker *cursor_tracker,
++                 gpointer           user_data)
++{
++  GHashTable *cache = user_data;
++  GHashTableIter iter;
++  MetaCursorXcursor *cursor_xcursor;
++
++  g_hash_table_iter_init (&iter, cache);
++  while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &cursor_xcursor))
++    cursor_xcursor->recolor_stale = TRUE;
++}
++
+ static GHashTable *
+ ensure_cache (MetaCursorTracker *cursor_tracker)
+ {
+@@ -91,6 +110,9 @@ ensure_cache (MetaCursorTracker *cursor_tracker)
+       g_signal_connect (cursor_tracker, "cursor-prefs-changed",
+                         G_CALLBACK (on_prefs_changed),
+                         cache);
++      g_signal_connect (cursor_tracker, "cursor-recolor-changed",
++                        G_CALLBACK (on_recolor_changed),
++                        cache);
+     }
+ 
+   return cache;
+@@ -326,6 +348,78 @@ load_cursor_on_client (ClutterCursorType cursor,
+   return xcursor_images;
+ }
+ 
++/* Recolors premultiplied ARGB @pixels from @from to @to (see
++ * meta_cursor_tracker_set_recolor ()). A pixel blending @from into a grey has
++ * the same hue and the grey's level in each channel, so its share of @from is
++ * its chroma over @from's, and swapping that share for @to keeps the grey. */
++static void
++recolor_pixels (uint32_t        *pixels,
++                int              n_pixels,
++                const CoglColor *from,
++                const CoglColor *to)
++{
++  /* How far, in 0..1 per channel, a pixel's hue may stray from @from's for
++   * it to count as a blend of it, allowing for rounding. */
++  const float tolerance = 0.08f;
++  const float from_channels[] = {
++    cogl_color_get_red (from),
++    cogl_color_get_green (from),
++    cogl_color_get_blue (from),
++  };
++  const float to_channels[] = {
++    cogl_color_get_red (to),
++    cogl_color_get_green (to),
++    cogl_color_get_blue (to),
++  };
++  float from_min = MIN (from_channels[0], MIN (from_channels[1], from_channels[2]));
++  float from_max = MAX (from_channels[0], MAX (from_channels[1], from_channels[2]));
++  float from_chroma = from_max - from_min;
++  int i, c;
++
++  if (from_chroma == 0.0f)
++    return;
++
++  for (i = 0; i < n_pixels; i++)
++    {
++      uint32_t pixel = pixels[i];
++      uint32_t alpha = pixel >> 24;
++      float channels[3];
++      float min, max, share;
++      gboolean blend = TRUE;
++
++      if (alpha == 0)
++        continue;
++
++      for (c = 0; c < 3; c++)
++        channels[c] = (float) ((pixel >> (16 - 8 * c)) & 0xff) / alpha;
++
++      min = MIN (channels[0], MIN (channels[1], channels[2]));
++      max = MAX (channels[0], MAX (channels[1], channels[2]));
++      share = (max - min) / from_chroma;
++      if (share < 0.02f)
++        continue;
++
++      for (c = 0; c < 3; c++)
++        {
++          if (fabsf ((channels[c] - min) -
++                     share * (from_channels[c] - from_min)) > tolerance)
++            blend = FALSE;
++        }
++      if (!blend)
++        continue;
++
++      share = MIN (share, 1.0f);
++      pixel &= 0xff000000;
++      for (c = 0; c < 3; c++)
++        {
++          float channel = channels[c] + share * (to_channels[c] - from_channels[c]);
++
++          pixel |= (uint32_t) roundf (CLAMP (channel, 0.0f, 1.0f) * alpha) << (16 - 8 * c);
++        }
++      pixels[i] = pixel;
++    }
++}
++
+ static void
+ load_from_current_xcursor_image (MetaCursorXcursor *cursor_xcursor)
+ {
+@@ -339,6 +433,8 @@ load_from_current_xcursor_image (MetaCursorXcursor *cursor_xcursor)
+   CoglContext *cogl_context;
+   g_autoptr (CoglTexture) texture = NULL;
+   g_autoptr (GError) error = NULL;
++  uint32_t *pixels;
++  CoglColor from, to;
+   int hotspot_x, hotspot_y;
+ 
+   xc_image = meta_cursor_xcursor_get_current_image (cursor_xcursor);
+@@ -346,6 +442,16 @@ load_from_current_xcursor_image (MetaCursorXcursor *cursor_xcursor)
+   height = (int) xc_image->height;
+   rowstride = width * 4;
+ 
++  g_clear_pointer (&cursor_xcursor->recolored_pixels, g_free);
++  if (meta_cursor_tracker_get_recolor (cursor_tracker, &from, &to))
++    {
++      cursor_xcursor->recolored_pixels =
++        g_memdup2 (xc_image->pixels, (gsize) width * height * sizeof (uint32_t));
++      recolor_pixels (cursor_xcursor->recolored_pixels, width * height,
++                      &from, &to);
++    }
++  pixels = meta_cursor_xcursor_get_current_pixels (cursor_xcursor);
++
+ #if G_BYTE_ORDER == G_LITTLE_ENDIAN
+   cogl_format = COGL_PIXEL_FORMAT_BGRA_8888_PRE;
+ #else
+@@ -358,7 +464,7 @@ load_from_current_xcursor_image (MetaCursorXcursor *cursor_xcursor)
+                                            width, height,
+                                            cogl_format,
+                                            rowstride,
+-                                           (uint8_t *) xc_image->pixels,
++                                           (uint8_t *) pixels,
+                                            &error);
+   if (!texture)
+     g_warning ("Failed to allocate cursor texture: %s", error->message);
+@@ -371,6 +477,7 @@ load_from_current_xcursor_image (MetaCursorXcursor *cursor_xcursor)
+                 cursor_xcursor->theme_scale);
+ 
+   g_set_object (&cursor_xcursor->texture, texture);
++  cursor_xcursor->recolor_stale = FALSE;
+   cursor_xcursor->hot_x = hotspot_x;
+   cursor_xcursor->hot_y = hotspot_y;
+   clutter_cursor_emit_texture_changed (CLUTTER_CURSOR (cursor_xcursor));
+@@ -422,6 +529,17 @@ meta_cursor_xcursor_get_current_image (MetaCursorXcursor *cursor_xcursor)
+   return cursor_xcursor->xcursor_images->images[cursor_xcursor->current_frame];
+ }
+ 
++/* The current image's pixels as shown: recolored while the tracker
++ * recolors. */
++uint32_t *
++meta_cursor_xcursor_get_current_pixels (MetaCursorXcursor *cursor_xcursor)
++{
++  if (cursor_xcursor->recolored_pixels)
++    return cursor_xcursor->recolored_pixels;
++
++  return meta_cursor_xcursor_get_current_image (cursor_xcursor)->pixels;
++}
++
+ static void
+ meta_cursor_xcursor_tick_frame (ClutterCursor *cursor)
+ {
+@@ -494,13 +612,19 @@ static gboolean
+ meta_cursor_xcursor_realize_texture (ClutterCursor *cursor)
+ {
+   MetaCursorXcursor *cursor_xcursor = META_CURSOR_XCURSOR (cursor);
+-  gboolean retval = cursor_xcursor->invalidated;
++  gboolean retval = FALSE;
+ 
+-  if (!cursor_xcursor->invalidated)
+-    return FALSE;
++  if (cursor_xcursor->invalidated)
++    {
++      retval = load_cursor_from_theme (cursor_xcursor);
++      cursor_xcursor->invalidated = FALSE;
++    }
+ 
+-  retval = load_cursor_from_theme (cursor_xcursor);
+-  cursor_xcursor->invalidated = FALSE;
++  if (cursor_xcursor->recolor_stale && cursor_xcursor->xcursor_images)
++    {
++      load_from_current_xcursor_image (cursor_xcursor);
++      retval = TRUE;
++    }
+ 
+   return retval;
+ }
+@@ -646,6 +770,7 @@ meta_cursor_xcursor_finalize (GObject *object)
+   MetaCursorXcursor *cursor_xcursor = META_CURSOR_XCURSOR (object);
+ 
+   g_clear_object (&cursor_xcursor->texture);
++  g_clear_pointer (&cursor_xcursor->recolored_pixels, g_free);
+   g_clear_pointer (&cursor_xcursor->cursor_images, g_array_unref);
+ 
+   G_OBJECT_CLASS (meta_cursor_xcursor_parent_class)->finalize (object);
+diff --git a/src/backends/meta-cursor-xcursor.h b/src/backends/meta-cursor-xcursor.h
+index b697ca1..b1eebc2 100644
+--- a/src/backends/meta-cursor-xcursor.h
++++ b/src/backends/meta-cursor-xcursor.h
+@@ -39,6 +39,8 @@ ClutterCursorType meta_cursor_xcursor_get_cursor (MetaCursorXcursor *sprite_xcur
+ 
+ XcursorImage * meta_cursor_xcursor_get_current_image (MetaCursorXcursor *sprite_xcursor);
+ 
++uint32_t * meta_cursor_xcursor_get_current_pixels (MetaCursorXcursor *sprite_xcursor);
++
+ void meta_cursor_xcursor_get_scaled_image_size (MetaCursorXcursor *sprite_xcursor,
+                                                 int               *width,
+                                                 int               *height);
+diff --git a/src/backends/native/meta-cursor-renderer-native.c b/src/backends/native/meta-cursor-renderer-native.c
+index f6e38bb..769aeb9 100644
+--- a/src/backends/native/meta-cursor-renderer-native.c
++++ b/src/backends/native/meta-cursor-renderer-native.c
+@@ -1234,14 +1234,16 @@ realize_cursor_sprite_from_xcursor_for_crtc (MetaCursorRenderer *renderer,
+   MetaCursorRendererNative *native = META_CURSOR_RENDERER_NATIVE (renderer);
+   ClutterCursor *cursor = CLUTTER_CURSOR (cursor_xcursor);
+   XcursorImage *xc_image;
++  uint32_t *pixels;
+ 
+   xc_image = meta_cursor_xcursor_get_current_image (cursor_xcursor);
++  pixels = meta_cursor_xcursor_get_current_pixels (cursor_xcursor);
+ 
+   return load_scaled_and_transformed_cursor_sprite (native,
+                                                     crtc_kms,
+                                                     target_color_state,
+                                                     cursor,
+-                                                    (uint8_t *) xc_image->pixels,
++                                                    (uint8_t *) pixels,
+                                                     xc_image->width,
+                                                     xc_image->height,
+                                                     xc_image->width * 4,
+diff --git a/src/meta/meta-cursor-tracker.h b/src/meta/meta-cursor-tracker.h
+index 60c16f5..a74bb9c 100644
+--- a/src/meta/meta-cursor-tracker.h
++++ b/src/meta/meta-cursor-tracker.h
+@@ -60,3 +60,8 @@ void           meta_cursor_tracker_inhibit_cursor_visibility (MetaCursorTracker
+ 
+ META_EXPORT
+ void           meta_cursor_tracker_uninhibit_cursor_visibility (MetaCursorTracker *tracker);
++
++META_EXPORT
++void           meta_cursor_tracker_set_recolor (MetaCursorTracker *tracker,
++                                                const CoglColor   *from,
++                                                const CoglColor   *to);

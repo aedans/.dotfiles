@@ -15,7 +15,7 @@
 #define THEMED_CLASS "ws-themed"
 // Longer than the stylesheets' transitions, so they finish before
 // ws-animating is removed.
-#define ANIMATING_MS 600
+#define ANIMATING_MS 450
 
 typedef struct {
     GtkWidget *window;

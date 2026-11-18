@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {WINDOW_ANIMATION_TIME} from 'resource:///org/gnome/shell/ui/workspaceAnimation.js';
 
+import {FADE_TIME} from './fade.js';
 import {watchWorkspacePosition} from './position.js';
 import {schemeAt} from './schemes.js';
 
@@ -10,9 +10,11 @@ import {schemeAt} from './schemes.js';
 // all of them: stylesheet.css gives each class its theme's tint and accent,
 // which St applies to every color below it (see patches/st-tint.patch). The
 // class changes as the position heads for a workspace, and the change
-// crossfades for the slide's length while ws-animating is set.
+// crossfades with the top bar's (see fade.js) while ws-animating is set.
 
 const ANIMATING_CLASS = 'ws-animating';
+// Longer than the crossfade, so it finishes before ws-animating is dropped.
+const ANIMATING_TIME = FADE_TIME + 200;
 
 const classOf = theme => `ws-${theme}`;
 
@@ -36,14 +38,14 @@ export function enableShellTheme(schemes) {
             GLib.source_remove(animating);
         animating = 0;
     };
-    // The theme switches as the workspaces start sliding and crossfades for as
-    // long as the slide takes; the animating class is dropped once it's done.
+    // The theme switches as the workspaces start sliding and crossfades; the
+    // animating class is dropped once it's done.
     const apply = (theme, animate) => {
         if (theme === current)
             return;
         stopAnimating();
         if (animate) {
-            animating = GLib.timeout_add(GLib.PRIORITY_DEFAULT, WINDOW_ANIMATION_TIME * 2, () => {
+            animating = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ANIMATING_TIME, () => {
                 animating = 0;
                 show();
                 return GLib.SOURCE_REMOVE;
