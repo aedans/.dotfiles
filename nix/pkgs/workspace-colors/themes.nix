@@ -13,7 +13,13 @@
 #   ui        window colors: window, view (content and lists), raised (headerbar,
 #             popovers), sidebar, border, button, hover, text, accent (accent
 #             backgrounds), accentText (accent-colored text), accentForeground
-#             (text on accent backgrounds)
+#             (text on accent backgrounds). They're the palette's own shades,
+#             picked so every theme steps about as far from its window color
+#             in OKLab lightness, and workspaces differ in hue rather than
+#             contrast: border about -0.065, view -0.03, sidebar the same or a
+#             little lighter, raised +0.07, button +0.13, hover +0.18. Where a
+#             palette has no such shade (Nord below its window, Gruvbox's
+#             border), one is computed at that lightness in its hue.
 #   terminal  foreground, background and 16-color palette
 #   icons     the filter recoloring Nautilus's file icons (Colloid-Nord), as
 #             sepia, saturate and hue-rotate amounts; sepia moves them to an
@@ -49,8 +55,8 @@
     };
     tint = { hue = 220; saturation = 0.2; };
     ui = {
-      window = "#2e3440"; view = "#292e39"; raised = "#3b4252"; sidebar = "#343a47";
-      border = "#242933"; button = "#4c566a"; hover = "#566178"; text = "#eceff4";
+      window = "#2e3440"; view = "#272c37"; raised = "#3b4252"; sidebar = "#272d3a";
+      border = "#1f242e"; button = "#4c566a"; hover = "#59647c"; text = "#eceff4";
       accent = "#5e81ac"; accentText = "#88c0d0"; accentForeground = "#eceff4";
     };
     terminal = {
@@ -71,8 +77,8 @@
     };
     tint = { hue = 30; saturation = 0.22; };
     ui = {
-      window = "#282828"; view = "#1d2021"; raised = "#3c3836"; sidebar = "#32302f";
-      border = "#141617"; button = "#504945"; hover = "#665c54"; text = "#ebdbb2";
+      window = "#282828"; view = "#1d2021"; raised = "#3c3836"; sidebar = "#1d2021";
+      border = "#17191a"; button = "#504945"; hover = "#665c54"; text = "#ebdbb2";
       accent = "#d65d0e"; accentText = "#fe8019"; accentForeground = "#fbf1c7";
     };
     terminal = {
@@ -94,8 +100,8 @@
     };
     tint = { hue = 160; saturation = 0.18; };
     ui = {
-      window = "#2d353b"; view = "#232a2e"; raised = "#343f44"; sidebar = "#272e33";
-      border = "#1e2326"; button = "#475258"; hover = "#4f585e"; text = "#d3c6aa";
+      window = "#2d353b"; view = "#232a2e"; raised = "#3d484d"; sidebar = "#272e33";
+      border = "#1e2326"; button = "#4f585e"; hover = "#56635f"; text = "#d3c6aa";
       accent = "#a7c080"; accentText = "#a7c080"; accentForeground = "#2d353b";
     };
     terminal = {
