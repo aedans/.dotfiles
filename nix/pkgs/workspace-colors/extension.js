@@ -8,6 +8,8 @@ import {enableShellTheme} from './shellTheme.js';
 import {enableWindowThemes} from './windowThemes.js';
 
 // GNOME requires extensions to be a default-exported Extension subclass.
+// It stays enabled on the lock screen (session-modes in metadata.json), which
+// otherwise falls back to the first workspace's colors and background.
 export default class WorkspaceColors extends Extension {
     enable() {
         const schemes = readSchemes(this.dir);
