@@ -24,6 +24,20 @@
   transition-duration: 0ms;
 }
 
+/* GNOME's notifications are a much lighter grey than its other surfaces, and
+ * the tint saturates lighter greys more, so they'd stand out in every theme's
+ * hue. Here they're a step above the menus they sit in, as libadwaita's cards
+ * are above their window. */
+.message {
+  background-color: #45454a;
+}
+.message:second-in-stack {
+  background-color: #3d3d42;
+}
+.message:lower-in-stack {
+  background-color: #39393e;
+}
+
 /* GNOME gives each dock icon a tile in its own dock's grey, which shows as a
  * square on any other dock color, and a hover highlight in a fixed lighter
  * grey. Here the tile is clear and the highlight a translucent white, so it
