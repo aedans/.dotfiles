@@ -60,9 +60,15 @@ export function enableWindowThemes(schemes) {
             'workspace-changed', () => update(window),
             'notify::gtk-window-object-path', () => update(window),
             'notify::gtk-unique-bus-name', () => update(window),
-            // Only windows named by title. A window's class can arrive after
-            // its title, deciding whether it's named by title at all.
+            // Only windows named by title. A window's class or parent can
+            // arrive after its title, deciding whether it's named by title at
+            // all: Electron's dialogs on Wayland get their parent once it's
+            // exported to them, after they're shown.
             'notify::title', () => {
+                if (!window.get_gtk_window_object_path())
+                    update(window);
+            },
+            'notify::transient-for', () => {
                 if (!window.get_gtk_window_object_path())
                     update(window);
             },
