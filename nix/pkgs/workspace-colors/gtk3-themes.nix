@@ -4,9 +4,9 @@
 # with the theme's colors as the base, and scoped to its ws-<theme> windows
 # (see scope-css.py), in themes.css. The GTK module loads them below
 # applications' own stylesheets, where they replace the desktop's theme in
-# themed windows. fade.css has the text color transitions for theme changes,
-# on the nodes Adwaita gives a color.
-{ lib, runCommand, writeText, sassc, python3, gtk3, themes }:
+# themed windows. fade.css has the transitions for theme changes (faded, a
+# transition-property list) on the nodes Adwaita gives a text color.
+{ lib, runCommand, writeText, sassc, python3, gtk3, themes, faded }:
 let
   # Adwaita's base colors; everything else derives from them.
   baseColors = { ui, ... }: {
@@ -57,5 +57,5 @@ runCommand "workspace-themes-gtk3-adwaita" {
   mkdir $out
   ${lib.concatStrings (lib.mapAttrsToList compile themes)}
   # Every theme gives color to the same nodes.
-  python3 ${./scope-css.py} fade ws-animating < ${lib.head (lib.attrNames themes)}.css > $out/fade.css
+  python3 ${./scope-css.py} fade ws-animating '${faded}' < ${lib.head (lib.attrNames themes)}.css > $out/fade.css
 ''

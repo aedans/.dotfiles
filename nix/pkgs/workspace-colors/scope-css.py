@@ -6,19 +6,23 @@
 # @define-color is inlined into the rules instead; keyframes are renamed per
 # class. Relative urls are resolved against <assets>.
 #
-# scope-css.py fade <class> < theme.css: text color transitions for windows with
-# the class, on the nodes the theme gives a color. GTK 3 doesn't update a color
-# a node inherits while it's transitioning, so only the nodes setting one may
-# transition it; their descendants follow them.
+# scope-css.py fade <class> <properties> < theme.css: the transitions (a
+# transition-property list) for windows with the class, on the nodes the theme
+# gives a text color of their own. A node whose color follows its parent's
+# (inherit, or derived from currentColor) must not transition it, nor must one
+# that only inherits it: GTK 3 doesn't update it while the transition runs, and
+# GTK 4 restarts it on every frame of its parent's, so it holds the old color
+# until the parent's is done. So the rules follow the theme's own, in order and
+# in their @media, with color among their properties where the rule's color
+# stands on its own and left out where it follows the parent's.
 import sys
 
 import tinycss2
 from tinycss2 import ast
 
-FADED = 'background-color, background-image, color, border-color, box-shadow'
-
 mode, scope = sys.argv[1], sys.argv[2]
 assets = sys.argv[3] if mode == 'theme' else None
+faded = sys.argv[3] if mode == 'fade' else None
 rules = tinycss2.parse_stylesheet(sys.stdin.read(), skip_comments=True, skip_whitespace=True)
 
 named_colors = {}
@@ -96,16 +100,45 @@ def declarations(content):
     return tinycss2.serialize(resolve(content)).strip()
 
 
-def sets_color(rule):
-    return any(isinstance(d, ast.Declaration) and d.lower_name == 'color'
-               for d in tinycss2.parse_declaration_list(rule.content))
+def color_value(rule):
+    """The tokens of the rule's color, or None if it sets none."""
+    colors = [d.value for d in tinycss2.parse_declaration_list(rule.content)
+              if isinstance(d, ast.Declaration) and d.lower_name == 'color']
+    return colors[-1] if colors else None
+
+
+def follows_parent(tokens):
+    """Whether a color value depends on the parent's color."""
+    for token in tokens:
+        if isinstance(token, ast.IdentToken) and token.lower_value in ('inherit', 'currentcolor'):
+            return True
+        if isinstance(token, ast.FunctionBlock) and follows_parent(token.arguments):
+            return True
+    return False
+
+
+def fade_rules(rules):
+    without_color = ', '.join(p for p in faded.split(', ') if p != 'color')
+    out = []
+    for rule in rules:
+        if isinstance(rule, ast.QualifiedRule):
+            color = color_value(rule)
+            selectors = [s for selector in split_selectors(rule.prelude) if selector != '*'
+                         for s in scoped(selector)]
+            if color is not None and selectors:
+                properties = without_color if follows_parent(color) else faded
+                out.append(f'{", ".join(selectors)} {{ transition-property: {properties}; }}')
+        elif isinstance(rule, ast.AtRule) and rule.lower_at_keyword == 'media' and rule.content:
+            inner = fade_rules(tinycss2.parse_rule_list(rule.content, skip_comments=True,
+                                                        skip_whitespace=True))
+            if inner:
+                out.append(f'@media {tinycss2.serialize(rule.prelude).strip()} {{\n'
+                           + '\n'.join(inner) + '\n}')
+    return out
 
 
 def fade():
-    selectors = {s for rule in rules if isinstance(rule, ast.QualifiedRule) and sets_color(rule)
-                 for selector in split_selectors(rule.prelude) if selector != '*'
-                 for s in scoped(selector)}
-    return [f'{", ".join(sorted(selectors))} {{ transition-property: {FADED}; }}']
+    return fade_rules(rules)
 
 
 def theme():

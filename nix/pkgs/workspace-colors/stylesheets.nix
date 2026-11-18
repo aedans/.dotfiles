@@ -3,8 +3,18 @@
 # default theme's colors.
 { lib, themes, default }:
 let
-  inherit (lib) concatStrings mapAttrsToList;
+  inherit (lib) concatStrings concatStringsSep mapAttrsToList;
   forThemes = f: concatStrings (mapAttrsToList f themes);
+
+  # What fades while a theme change is in flight. Text color fades only where
+  # it's set, the window here and the toolkit theme's nodes setting one (see
+  # gtk3-themes.nix and gtk4-fade.nix); nodes that inherit it follow.
+  faded = {
+    gtk3 = [ "background-color" "background-image" "color" "border-color" "box-shadow" ];
+    gtk4 = [ "background-color" "color" "border-color" "outline-color" "box-shadow" "filter" ];
+  };
+  transitionProperty = properties: "transition-property: ${concatStringsSep ", " properties};";
+  withoutColor = lib.remove "color";
 
   # libadwaita's colors are variables, so a GTK 4 theme just sets them.
   adwaitaVariables = { ui, ... }: ''
@@ -73,30 +83,33 @@ let
      * As long as the workspace slide, and eased like it (ease-out cubic). */
     window.ws-animating,
     window.ws-animating * {
-      transition-property: background-color, color, border-color, outline-color, box-shadow, filter;
+      ${transitionProperty (withoutColor faded.gtk4)}
       transition-duration: 250ms;
       transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    window.ws-animating {
+      ${transitionProperty faded.gtk4}
     }
   '';
 
   # GTK 3's themes are whole stylesheets (see gtk3-themes.nix); this only fades
-  # between them. Text color fades only where it's set, the window here and
-  # Adwaita's nodes in gtk3-themes.nix's fade.css; nodes that inherit it follow.
+  # between them.
   gtk3 = ''
     /* Only while a theme change is in flight, so hover effects keep their speed.
      * As long as the workspace slide, and eased like it (ease-out cubic). */
     .ws-animating,
     .ws-animating * {
-      transition-property: background-color, background-image, border-color, box-shadow;
+      ${transitionProperty (withoutColor faded.gtk3)}
       transition-duration: 250ms;
       transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
     }
     .ws-animating {
-      transition-property: background-color, background-image, color, border-color, box-shadow;
+      ${transitionProperty faded.gtk3}
     }
   '';
 in
 {
   inherit gtk4 gtk3;
+  faded = lib.mapAttrs (toolkit: concatStringsSep ", ") faded;
   terminalPalettes = lib.mapAttrs (name: theme: theme.terminal) themes;
 }

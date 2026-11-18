@@ -19,9 +19,16 @@ let
     inherit themes;
     default = "nord";
   };
-  gtk3Themes = pkgs.callPackage (dir + "/gtk3-themes.nix") { inherit themes; };
+  gtk3Themes = pkgs.callPackage (dir + "/gtk3-themes.nix") {
+    inherit themes;
+    faded = stylesheets.faded.gtk3;
+  };
+  gtk4Fade = pkgs.callPackage (dir + "/gtk4-fade.nix") { faded = stylesheets.faded.gtk4; };
   gtkModule = pkgs.callPackage (dir + "/gtk-module") {
-    css = pkgs.writeText "workspace-themes-gtk4.css" stylesheets.gtk4;
+    css = pkgs.concatText "workspace-themes-gtk4.css" [
+      (pkgs.writeText "workspace-colors-gtk4.css" stylesheets.gtk4)
+      "${gtk4Fade}/fade.css"
+    ];
     gtk3Css = pkgs.concatText "workspace-themes-gtk3.css" [
       (pkgs.writeText "workspace-fade-gtk3.css" stylesheets.gtk3)
       "${gtk3Themes}/fade.css"
