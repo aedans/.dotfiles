@@ -1,17 +1,2 @@
-^/Colloid-gtk-theme
-^/Colloid-icon-theme
-^/config
-^/Future-cursors
-^/nix
-^/.git
-^/.gitconfig
-^/.gitmodules
-^/.stow-local-ignore
-^/bootstrap.sh
-^/dump-dconf.sh
-^/dump-kde.sh
-^/dump-vscode.sh
-^/flake.lock
-^/flake.nix
-^/README.md
-^/dconf-ignore.txt
+# Only .config is stowed; everything else here is the repo itself.
+^/(?!\.config(/|$))[^/]+
