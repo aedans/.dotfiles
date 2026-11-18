@@ -27,7 +27,6 @@ in
     gnome-tweaks
     gnome-connections
     gnomeExtensions.auto-move-windows
-    gnomeExtensions.blur-my-shell
     gnomeExtensions.caffeine
     gnomeExtensions.user-themes
     gnomeExtensions.just-perfection
