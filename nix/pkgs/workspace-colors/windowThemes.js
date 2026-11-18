@@ -18,7 +18,7 @@ const OBJECT_PATH = '/org/hans/WorkspaceTheme';
 const INTERFACE = 'org.hans.WorkspaceTheme';
 const PROCESS_BUS_PREFIX = 'org.hans.WorkspaceTheme.P';
 // Window classes of plain GTK applications without a GTK object path.
-const TITLED_APPS = new Set(['qemu']);
+const TITLED_APPS = new Set(['qemu', 'nm-connection-editor']);
 
 function themeOf(schemes, window) {
     const workspace = window.is_on_all_workspaces() ? null : window.get_workspace();
