@@ -8,9 +8,17 @@
 // the theme's tint, and the accent replaces -st-accent-color. Layout is never
 // copied, so a theme only changes colors.
 //
+// The first workspace's copy is also baked, unscoped, into the shell's own
+// stylesheet (see bake.mjs), so the shell wears it before the extension
+// loads. The scoped copies are made without that block, and each beats it
+// as the scoped copy of the rule it recolored.
+//
 // theme: {tint: {hue, saturation}, accent, accentForeground}
 
 export const ANIMATING_CLASS = 'ws-animating';
+
+const BAKED_START = '/* workspace-colors: baked */';
+const BAKED_END = '/* workspace-colors: end baked */';
 
 // Below this HLS saturation a color counts as a neutral grey.
 const NEUTRAL_SATURATION = 0.12;
@@ -123,7 +131,8 @@ function splitSelectors(selectors) {
     return splitTopLevel(selectors, /,/);
 }
 
-function* scopedRules(css, name, theme) {
+// Rules recolored for theme, each selector prefixed by scope.
+function* recoloredRules(css, scope, theme) {
     for (const [, selectors, body] of css.matchAll(RULE)) {
         const declarations = [...body.matchAll(DECLARATION)]
             .map(([, property, value]) => colorDeclaration(property, value.trim()))
@@ -132,7 +141,7 @@ function* scopedRules(css, name, theme) {
         // `stage` is the root, outside any scope.
         const scoped = splitSelectors(selectors)
             .filter(selector => !selector.startsWith('stage'))
-            .map(selector => `.ws-${name} ${selector}`);
+            .map(selector => `${scope}${selector}`);
         if (declarations.length && scoped.length)
             yield `${scoped.join(',\n')} {\n${declarations.join('\n')}\n}\n`;
     }
@@ -145,11 +154,28 @@ function animatingRule(durationMs) {
     return `.${ANIMATING_CLASS} * {\n  transition-duration: ${durationMs}ms;\n}\n`;
 }
 
+function withoutBaked(css) {
+    const start = css.indexOf(BAKED_START);
+    const end = css.indexOf(BAKED_END, start);
+    return start < 0 || end < 0 ? css : css.slice(0, start) + css.slice(end + BAKED_END.length);
+}
+
+function plain(stylesheets) {
+    return stylesheets.map(css => withoutBaked(css).replace(/\/\*[\s\S]*?\*\//g, ''));
+}
+
 // stylesheets: CSS texts in cascade order; themes: {name: theme}.
 export function scopedStylesheet(stylesheets, themes, transitionMs) {
-    const plain = stylesheets.map(css => css.replace(/\/\*[\s\S]*?\*\//g, ''));
+    const sources = plain(stylesheets);
     return Object.entries(themes)
-        .flatMap(([name, theme]) => plain.flatMap(css => [...scopedRules(css, name, theme)]))
+        .flatMap(([name, theme]) => sources.flatMap(css => [...recoloredRules(css, `.ws-${name} `, theme)]))
         .concat(animatingRule(transitionMs))
         .join('');
+}
+
+// The block baked into a stylesheet: its recolored copy for theme, then
+// extra rules of the caller's.
+export function bakedStylesheet(stylesheets, theme, extra) {
+    const rules = plain(stylesheets).flatMap(css => [...recoloredRules(css, '', theme)]);
+    return [`\n${BAKED_START}\n`, ...rules, extra, `${BAKED_END}\n`].join('');
 }

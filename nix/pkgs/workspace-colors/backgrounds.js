@@ -15,19 +15,39 @@ import {fieldOfAll} from './schemes.js';
 // the switch animation draws. Instead each workspace owns a Meta.Background,
 // and background actors are pointed at one directly: the per-workspace copies
 // drawn by the switch animation and the overview at their workspace's, every
-// other actor at the active workspace's.
+// other actor at the active workspace's. Those follow it once its image has
+// loaded, so the desktop never shows the bare color in between.
+//
+// GNOME shows the background from gsettings until extensions enable, so that
+// is kept as the image the first workspace shows on the primary monitor.
+
+const SETTINGS_SCHEMA = 'org.gnome.desktop.background';
+const SETTINGS_KEYS = ['picture-uri', 'picture-uri-dark'];
 
 // The image, zoomed to fill its monitor, over the color, which shows until the
-// image has loaded.
-function workspaceBackground(color, image) {
+// image has loaded. image is the cache's entry for it, loading or loaded.
+function workspaceBackground(color, path) {
     const [, cogl] = Cogl.Color.from_string(color);
     const background = new Meta.Background({meta_display: global.display});
     background.set_color(cogl);
-    if (image)
-        background.set_file(Gio.File.new_for_path(image), GDesktopEnums.BackgroundStyle.ZOOM);
+    const file = path ? Gio.File.new_for_path(path) : null;
+    if (file)
+        background.set_file(file, GDesktopEnums.BackgroundStyle.ZOOM);
     // BackgroundManager waits for 'loaded' on backgrounds that aren't.
     background.isLoaded = true;
-    return background;
+    const image = file ? Meta.BackgroundImageCache.get_default().load(file) : null;
+    return {background, image, file};
+}
+
+function isLoaded({image}) {
+    return !image || image.is_loaded();
+}
+
+function keepStartupBackground(file) {
+    const settings = new Gio.Settings({schema_id: SETTINGS_SCHEMA});
+    const uri = file.get_uri();
+    SETTINGS_KEYS.filter(key => settings.get_string(key) !== uri)
+        .forEach(key => settings.set_string(key, uri));
 }
 
 // The crop (see default.nix) whose shape is closest to the monitor's, so that
@@ -76,7 +96,7 @@ export function enableBackgrounds(schemes) {
     const pin = (manager, workspace) => {
         following.delete(manager);
         pinned.set(manager, workspace.index());
-        pointAt(manager, backgroundFor(workspace.index(), manager._monitorIndex));
+        pointAt(manager, backgroundFor(workspace.index(), manager._monitorIndex).background);
     };
 
     const injections = new InjectionManager();
@@ -85,7 +105,7 @@ export function enableBackgrounds(schemes) {
             const actor = original.call(this, ...args);
             if (!pinned.has(this))
                 following.add(this);
-            actor.content.background = backgroundFor(pinned.get(this) ?? active(), this._monitorIndex);
+            actor.content.background = backgroundFor(pinned.get(this) ?? active(), this._monitorIndex).background;
             return actor;
         });
     injections.overrideMethod(Background.BackgroundManager.prototype, 'destroy',
@@ -116,12 +136,31 @@ export function enableBackgrounds(schemes) {
     Main.layoutManager.monitors.forEach((monitor, monitorIndex) =>
         schemes.forEach((scheme, schemeIndex) => backgroundFor(schemeIndex, monitorIndex)));
 
-    const follow = () => following.forEach(m => pointAt(m, backgroundFor(active(), m._monitorIndex)));
+    // The image the following actors wait for, if any.
+    let waiting = null;
+    const stopWaiting = () => {
+        waiting?.image.disconnect(waiting.handler);
+        waiting = null;
+    };
+    const follow = () => {
+        stopWaiting();
+        const targets = [...following].map(m => [m, backgroundFor(active(), m._monitorIndex)]);
+        const unloaded = targets.map(([, target]) => target).find(target => !isLoaded(target));
+        if (unloaded)
+            waiting = {image: unloaded.image, handler: unloaded.image.connect('loaded', follow)};
+        else
+            targets.forEach(([m, target]) => pointAt(m, target.background));
+    };
     const handler = workspaces.connect('active-workspace-changed', follow);
     follow();
 
+    const startup = backgroundFor(0, Main.layoutManager.primaryIndex);
+    if (startup.file)
+        keepStartupBackground(startup.file);
+
     return () => {
         workspaces.disconnect(handler);
+        stopWaiting();
         injections.clear();
         // Rebuild from GNOME's own settings.
         following.forEach(m => m._updateBackgroundActor());

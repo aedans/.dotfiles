@@ -1,7 +1,7 @@
 # The workspace-colors GNOME Shell extension.
 # themes: see themes.nix. workspaces: theme names, one per workspace;
 # workspaces past the end wrap around.
-{ lib, stdenvNoCC, runCommand, imagemagick, writeText, themes, workspaces }:
+{ lib, stdenvNoCC, runCommand, imagemagick, nodejs, writeText, themes, workspaces }:
 let
   uuid = "workspace-colors@hans";
 
@@ -45,12 +45,12 @@ let
     accentForeground = ui.accentForeground;
   }) themes;
 in
-stdenvNoCC.mkDerivation {
+stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "gnome-shell-extension-workspace-colors";
   version = "1";
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [ ./metadata.json (lib.fileset.fileFilter (f: f.hasExt "js") ./.) ];
+    fileset = lib.fileset.unions [ ./metadata.json ./bake.mjs (lib.fileset.fileFilter (f: f.hasExt "js") ./.) ];
   };
   installPhase = ''
     dir=$out/share/gnome-shell/extensions/${uuid}
@@ -58,5 +58,13 @@ stdenvNoCC.mkDerivation {
     install -Dm644 ${writeText "schemes.json" (builtins.toJSON schemes)} $dir/schemes.json
     install -Dm644 ${writeText "themes.json" (builtins.toJSON shellThemes)} $dir/themes.json
   '';
-  passthru.extensionUuid = uuid;
-}
+  passthru = {
+    extensionUuid = uuid;
+    # A command printing the block that bakes the first workspace's colors
+    # into a shell stylesheet (see bake.mjs), given as a shell word.
+    bakeCommand = stylesheet: "${lib.escapeShellArgs [
+      (lib.getExe nodejs)
+      "${finalAttrs.src}/bake.mjs"
+    ]} ${stylesheet} ${lib.escapeShellArg "${finalAttrs.finalPackage}/share/gnome-shell/extensions/${uuid}"}";
+  };
+})

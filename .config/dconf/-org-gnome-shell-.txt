@@ -28,7 +28,7 @@ theme-shell=false
 [extensions/dash-to-dock]
 apply-custom-theme=false
 apply-glossy-effect=false
-background-color='rgb(32,36,44)'
+background-color='rgb(30,30,46)'
 background-opacity=1.0
 custom-background-color=true
 custom-theme-customize-running-dots=false

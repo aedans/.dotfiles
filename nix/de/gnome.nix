@@ -7,7 +7,7 @@ let
   });
 in
 {
-  imports = [ ./workspace-colors.nix ./login-background.nix ];
+  imports = [ ./shell-theme.nix ./workspace-colors.nix ./login-background.nix ];
 
   services = {
     displayManager.gdm.enable = true;
