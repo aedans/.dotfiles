@@ -19,9 +19,14 @@ let
     inherit themes;
     default = "nord";
   };
+  gtk3Themes = pkgs.callPackage (dir + "/gtk3-themes.nix") { inherit themes; };
   gtkModule = pkgs.callPackage (dir + "/gtk-module") {
     css = pkgs.writeText "workspace-themes-gtk4.css" stylesheets.gtk4;
-    gtk3Css = pkgs.writeText "workspace-themes-gtk3.css" stylesheets.gtk3;
+    gtk3Css = pkgs.concatText "workspace-themes-gtk3.css" [
+      (pkgs.writeText "workspace-fade-gtk3.css" stylesheets.gtk3)
+      "${gtk3Themes}/fade.css"
+    ];
+    gtk3Themes = "${gtk3Themes}/themes.css";
     inherit (stylesheets) terminalPalettes;
   };
   sessionMode = pkgs.callPackage (dir + "/session-mode.nix") { inherit extension; };

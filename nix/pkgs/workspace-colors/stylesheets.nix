@@ -79,110 +79,20 @@ let
     }
   '';
 
-  # GTK 3's Adwaita has no color variables, so the common widgets are restyled
-  # directly. Everything is a flat background-color, which GTK interpolates;
-  # gradients and image() backgrounds would jump at the end of the transition
-  # instead. Selectors name only the class: applications may rename their
-  # window's node, and a GTK 3 menu's window carries the class of the window
-  # it belongs to. Unthemed GTK 3 windows keep the desktop's GTK theme.
-  gtk3Theme = name: { ui, ... }: let n = ".ws-${name}"; in ''
-
-    ${n},
-    ${n}.background {
-      background-color: ${ui.window};
-      color: ${ui.text};
-    }
-    ${n} headerbar {
-      background-image: none;
-      background-color: ${ui.raised};
-      border-color: ${ui.border};
-      box-shadow: inset 0 1px alpha(${ui.text}, 0.07);
-    }
-    ${n} headerbar:backdrop {
-      background-color: ${ui.window};
-    }
-    ${n} button {
-      background-image: none;
-      background-color: ${ui.button};
-      border-color: ${ui.border};
-      box-shadow: none;
-    }
-    ${n} button:hover {
-      background-color: ${ui.hover};
-    }
-    ${n} button:active,
-    ${n} button:checked {
-      background-color: ${ui.window};
-    }
-    ${n} button:backdrop {
-      background-color: ${ui.raised};
-    }
-    ${n} button.flat,
-    ${n} button.flat:backdrop {
-      background-color: transparent;
-      border-color: transparent;
-    }
-    ${n} button.flat:hover {
-      background-color: ${ui.hover};
-    }
-    ${n} button.suggested-action {
-      background-color: ${ui.accent};
-      color: ${ui.accentForeground};
-    }
-    ${n} entry {
-      background-image: none;
-      background-color: ${ui.view};
-      border-color: ${ui.border};
-      color: ${ui.text};
-    }
-    ${n} .view,
-    ${n} iconview,
-    ${n} treeview,
-    ${n} textview text,
-    ${n} list {
-      background-color: ${ui.view};
-      color: ${ui.text};
-    }
-    ${n} .sidebar,
-    ${n} .sidebar list,
-    ${n} placessidebar list,
-    ${n} stacksidebar list {
-      background-color: ${ui.sidebar};
-    }
-    ${n} .view:selected,
-    ${n} treeview:selected,
-    ${n} list row:selected,
-    ${n} menu menuitem:hover,
-    ${n} .menu menuitem:hover {
-      background-color: ${ui.accent};
-      color: ${ui.accentForeground};
-    }
-    ${n} popover.background,
-    ${n} menu,
-    ${n} .menu,
-    ${n} .context-menu {
-      background-color: ${ui.raised};
-      border-color: ${ui.border};
-      color: ${ui.text};
-    }
-    ${n} notebook > header {
-      background-color: ${ui.window};
-      border-color: ${ui.border};
-    }
-    ${n} notebook > header.top > tabs > tab:checked {
-      box-shadow: inset 0 -4px ${ui.accent};
-    }
-  '';
-
-  gtk3 = forThemes gtk3Theme + ''
-
+  # GTK 3's themes are whole stylesheets (see gtk3-themes.nix); this only fades
+  # between them. Text color fades only where it's set, the window here and
+  # Adwaita's nodes in gtk3-themes.nix's fade.css; nodes that inherit it follow.
+  gtk3 = ''
     /* Only while a theme change is in flight, so hover effects keep their speed.
      * As long as the workspace slide, and eased like it (ease-out cubic). */
     .ws-animating,
     .ws-animating * {
-      transition-property: background-color, color, border-color, box-shadow;
+      transition-property: background-color, background-image, border-color, box-shadow;
       transition-duration: 250ms;
       transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    .ws-animating {
+      transition-property: background-color, background-image, color, border-color, box-shadow;
     }
   '';
 in
