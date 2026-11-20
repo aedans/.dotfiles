@@ -1,24 +1,33 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
 
 import {schemeAt} from './schemes.js';
 
-// Tells GTK applications running the workspace-theme module which theme each
-// of their windows should wear: its workspace's theme. The module animates
-// the change, so a window moved between workspaces fades to the new theme.
-// Application windows are named by their GTK object path. Dialogs without one,
-// such as file pickers the desktop portal shows for another application, and
-// the windows of the GTK applications in TITLED_APPS, are named by title to
-// the process showing them; other windows without one are left alone, which
+// Tells GTK applications running the workspace-theme module, and Qt
+// applications running the workspace-theme plugin, which theme each of their
+// windows should wear: its workspace's theme. Both animate the change, so a
+// window moved between workspaces fades to the new theme. GTK application
+// windows are named by their GTK object path. Dialogs without one, such as
+// file pickers the desktop portal shows for another application, and the
+// windows of the GTK applications in TITLED_APPS, are named by title to the
+// process showing them; other GTK windows without one are left alone, which
 // keeps applications that draw their own look (Firefox, Electron's) as they
-// are while their dialogs follow the workspace. Such a dialog is named only
-// once it's shown, so its process is told the theme of its focused window
-// ahead of time, which the module gives its dialogs as they're shown. Windows
-// on all workspaces, and processes without the module, are left alone too.
+// are while their dialogs follow the workspace. Every window of a Qt
+// application is named by title to its process's plugin. Mutter draws the
+// title bars of X11 windows in a GTK process of its own, which the module
+// themes too: each title bar is named by its window's title. A window is named
+// only once it's shown, so its process is told the theme of its focused window
+// ahead of time, which the module gives its dialogs, and the plugin its
+// windows, as they're shown. Windows on all workspaces, and processes without
+// the module or plugin, are left alone too.
 
 const OBJECT_PATH = '/org/hans/WorkspaceTheme';
 const INTERFACE = 'org.hans.WorkspaceTheme';
-const PROCESS_BUS_PREFIX = 'org.hans.WorkspaceTheme.P';
+const GTK_PROCESS_BUS_PREFIX = 'org.hans.WorkspaceTheme.P';
+const QT_PROCESS_BUS_PREFIX = 'org.hans.WorkspaceTheme.Qt';
+// The process drawing X11 windows' title bars.
+const FRAMES_BUS = 'org.hans.WorkspaceTheme.Frames';
 // Window classes of plain GTK applications without a GTK object path.
 const TITLED_APPS = new Set(['qemu', 'nm-connection-editor']);
 
@@ -43,18 +52,28 @@ function call(bus, method, parameters) {
 function sendTheme(window, theme) {
     const bus = window.get_gtk_unique_bus_name();
     const path = window.get_gtk_window_object_path();
-    if (bus && path)
+    const pid = window.get_pid();
+    const title = window.get_title() ?? '';
+    if (window.get_client_type() === Meta.WindowClientType.X11 && window.decorated)
+        call(FRAMES_BUS, 'SetToplevelTheme', [title, theme]);
+    if (bus && path) {
         call(bus, 'SetWindowTheme', [path, theme]);
-    else if ((window.get_transient_for() || TITLED_APPS.has(window.get_wm_class())) && window.get_pid() > 0)
-        call(`${PROCESS_BUS_PREFIX}${window.get_pid()}`, 'SetToplevelTheme', [window.get_title() ?? '', theme]);
+        return;
+    }
+    if (pid <= 0)
+        return;
+    if (window.get_transient_for() || TITLED_APPS.has(window.get_wm_class()))
+        call(`${GTK_PROCESS_BUS_PREFIX}${pid}`, 'SetToplevelTheme', [title, theme]);
+    call(`${QT_PROCESS_BUS_PREFIX}${pid}`, 'SetToplevelTheme', [title, theme]);
 }
 
-// The process bus of an application's own window that GTK doesn't name, whose
-// dialogs the shell can only name once they're shown.
-function unnamedProcessBus(window) {
-    if (window.get_gtk_window_object_path() || window.get_transient_for() || window.get_pid() <= 0)
-        return null;
-    return `${PROCESS_BUS_PREFIX}${window.get_pid()}`;
+// The process buses of an application's own window that GTK doesn't name,
+// whose new windows the shell can only name once they're shown.
+function unnamedProcessBuses(window) {
+    const pid = window.get_pid();
+    if (window.get_gtk_window_object_path() || window.get_transient_for() || pid <= 0)
+        return [];
+    return [`${GTK_PROCESS_BUS_PREFIX}${pid}`, `${QT_PROCESS_BUS_PREFIX}${pid}`];
 }
 
 export function enableWindowThemes(schemes) {
@@ -67,11 +86,10 @@ export function enableWindowThemes(schemes) {
     const processes = new Set();
     const updateProcess = () => {
         const window = global.display.focus_window;
-        const bus = window ? unnamedProcessBus(window) : null;
-        if (!bus)
-            return;
-        processes.add(bus);
-        call(bus, 'SetProcessTheme', [themeOf(schemes, window)]);
+        for (const bus of window ? unnamedProcessBuses(window) : []) {
+            processes.add(bus);
+            call(bus, 'SetProcessTheme', [themeOf(schemes, window)]);
+        }
     };
     const update = window => {
         sendTheme(window, themeOf(schemes, window));

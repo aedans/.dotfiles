@@ -1,9 +1,10 @@
 # A color theme per workspace (see nix/pkgs/workspace-colors): the shell
 # through its extension, GTK applications through a GTK module loaded into
-# each of them, and the cursor theme's accent through mutter. Applications that aren't GTK's (Firefox, VS Code, games) keep
-# their own look; their dialogs follow the workspace. The session's shell runs
-# in a mode of its own whose stylesheet has the first workspace's colors, so
-# it starts in them. Try changes in the VM first (see nix/vm.nix).
+# each of them, Qt Widgets applications through a Qt plugin likewise, and the
+# cursor theme's accent through mutter. Applications that draw their own look
+# (Firefox, VS Code, games) keep it; their dialogs follow the workspace. The
+# session's shell runs in a mode of its own whose stylesheet has the first
+# workspace's colors, so it starts in them. Try changes in the VM first (see nix/vm.nix).
 { pkgs, ... }:
 let
   dir = ../pkgs/workspace-colors;
@@ -36,6 +37,9 @@ let
     gtk3Themes = "${gtk3Themes}/themes.css";
     inherit (stylesheets) terminalPalettes;
   };
+  # One per Qt major version, each found by its own Qt.
+  qtPlugins = map (qt: qt.callPackage (dir + "/qt-plugin") { inherit themes; })
+    [ pkgs.libsForQt5 pkgs.qt6Packages ];
   sessionMode = pkgs.callPackage (dir + "/session-mode.nix") { inherit extension; };
 in
 {
@@ -65,9 +69,11 @@ in
   }];
 
   users.users.hans.packages = [ extension cursors ];
-  # GTK finds the module through GTK_PATH, which covers the system profile.
-  environment.systemPackages = [ sessionMode gtkModule ];
+  # GTK finds the module through GTK_PATH, which covers the system profile; Qt
+  # finds the plugins through the system profile's bin in PATH.
+  environment.systemPackages = [ sessionMode gtkModule ] ++ qtPlugins;
   environment.sessionVariables.GTK_MODULES = [ gtkModule.moduleName ];
+  environment.sessionVariables.QT_QPA_GENERIC_PLUGINS = (pkgs.lib.head qtPlugins).pluginName;
   # The session's shell; the greeter's is org.gnome.Shell@gdm.
   systemd.user.units."org.gnome.Shell@user.service" = {
     overrideStrategy = "asDropin";

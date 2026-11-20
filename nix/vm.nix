@@ -41,6 +41,7 @@ in
       serviceConfig.ExecStart = "${pkgs.bash}/bin/bash -c 'journalctl -b -f -o short-monotonic > /mnt/journal/journal.txt'";
     };
     environment.sessionVariables.G_MESSAGES_DEBUG = "workspace-theme";
+    environment.sessionVariables.QT_LOGGING_RULES = "workspace-theme.debug=true";
     # QEMU's window shows the guest's hardware cursor with red and blue
     # swapped, so the guest draws its cursor itself.
     environment.sessionVariables.MUTTER_DEBUG_DISABLE_HW_CURSORS = "1";

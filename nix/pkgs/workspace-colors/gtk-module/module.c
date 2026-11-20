@@ -5,8 +5,10 @@
 // such path, so they are named by title (SetToplevelTheme), sent to the name
 // org.hans.WorkspaceTheme.P<pid> each process running the module owns, along
 // with the theme of the process's focused window (SetProcessTheme), which
-// dialogs wear until they're named. Windows that belong to another follow it
-// (see windows.c).
+// dialogs wear until they're named. Mutter's process drawing X11 windows' title
+// bars owns org.hans.WorkspaceTheme.Frames as well, where each title bar is
+// named by its window's title. Windows that belong to another follow it (see
+// windows.c).
 #define G_LOG_DOMAIN "workspace-theme"
 #include <unistd.h>
 
@@ -16,6 +18,8 @@
 
 #define OBJECT_PATH "/org/hans/WorkspaceTheme"
 #define BUS_NAME_PREFIX "org.hans.WorkspaceTheme.P"
+#define FRAMES_BUS_NAME "org.hans.WorkspaceTheme.Frames"
+#define FRAMES_PROGRAM "mutter-x11-frames"
 // Above libadwaita's "* { transition: none; }" during its own style switches.
 #define PROVIDER_PRIORITY 10001
 // GTK 3's themes replace the desktop's theme and settings, below applications'
@@ -121,6 +125,9 @@ static void export_object(void)
     g_autofree char *name = g_strdup_printf(BUS_NAME_PREFIX "%d", (int)getpid());
     g_bus_own_name_on_connection(connection, name, G_BUS_NAME_OWNER_FLAGS_NONE,
                                  NULL, NULL, NULL, NULL);
+    if (g_strcmp0(g_get_prgname(), FRAMES_PROGRAM) == 0)
+        g_bus_own_name_on_connection(connection, FRAMES_BUS_NAME, G_BUS_NAME_OWNER_FLAGS_NONE,
+                                     NULL, NULL, NULL, NULL);
 }
 
 // GTK calls this once the default display is open: GTK 3 natively, GTK 4
