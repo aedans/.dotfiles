@@ -62,7 +62,6 @@ in
       vulkan-hdr-layer-kwin6
       imagemagick
       networkmanagerapplet
-      kdePackages.kdeconnect-kde
       (olympus.override { celesteWrapper = "steam-run"; })
       pkgs-unstable.lmstudio
       pkgs-llm-agents.dsh
@@ -167,17 +166,16 @@ in
     firewall = {
       # enable = false;
       trustedInterfaces     = [ "tailscale0" ];
-      allowedTCPPorts = [ 
-        # KDE Connect
-        1714 1715 1716
+      allowedTCPPorts = [
         # Minecraft
-        25565 
+        25565
       ];
       allowedUDPPorts = [
-        # KDE Connect
-        1714 1715 1716 
         config.services.tailscale.port
       ];
+      # KDE Connect (GSConnect)
+      allowedTCPPortRanges = [ { from = 1714; to = 1764; } ];
+      allowedUDPPortRanges = [ { from = 1714; to = 1764; } ];
     };
   };
 

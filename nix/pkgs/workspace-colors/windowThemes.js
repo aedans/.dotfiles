@@ -29,7 +29,7 @@ const QT_PROCESS_BUS_PREFIX = 'org.hans.WorkspaceTheme.Qt';
 // The process drawing X11 windows' title bars.
 const FRAMES_BUS = 'org.hans.WorkspaceTheme.Frames';
 // Window classes of plain GTK applications without a GTK object path.
-const TITLED_APPS = new Set(['qemu', 'nm-connection-editor']);
+const TITLED_APPS = new Set(['qemu', 'nm-connection-editor', 'gsconnect']);
 
 function themeOf(schemes, window) {
     const workspace = window.is_on_all_workspaces() ? null : window.get_workspace();
