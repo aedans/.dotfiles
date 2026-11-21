@@ -28,7 +28,8 @@
 {
   catppuccin = {
     desktop = {
-      image = ../../../.config/backgrounds/catppuccin.jpg;
+      # The dragon left of center, the cliffs on the right.
+      image = ../../../.config/backgrounds/catppuccin.jpg; anchor = { x = 1; y = 0.5; };
       background = "#5b4a9e"; panel = "#19192f"; dock = "#1e1e2e"; cursor = "#d073ff";
     };
     tint = { hue = 240; saturation = 0.3; };
@@ -50,7 +51,8 @@
 
   nord = {
     desktop = {
-      image = ../../../.config/backgrounds/nord.jpg;
+      # The mountain on the left, the dragon right of center.
+      image = ../../../.config/backgrounds/nord.jpg; anchor = { x = 0; y = 0.5; };
       background = "#3a4ba0"; panel = "#1d222b"; dock = "#2e3440"; cursor = "#00a8d7";
     };
     tint = { hue = 220; saturation = 0.2; };
