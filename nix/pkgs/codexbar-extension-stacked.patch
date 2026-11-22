@@ -1,5 +1,5 @@
---- a/extension.js	2026-10-06 15:57:55.258248481 -0700
-+++ b/extension.js	2026-10-06 16:02:40.180750054 -0700
+--- a/extension.js
++++ b/extension.js
 @@ -25,20 +25,12 @@
          // Botón indicador principal en el panel
          this._indicator = new PanelMenu.Button(0.0, _('CodexBar'), false);
@@ -68,7 +68,7 @@
          this._contentBox.destroy_all_children();
          
          const displayMode = this._settings.get_string('display-mode');
-@@ -434,177 +415,150 @@
+@@ -434,177 +415,156 @@
              return;
          }
  
@@ -160,7 +160,8 @@
 -            return;
 -        }
 +    /**
-+     * Panel text for one provider: its name and longest (weekly) window's percent.
++     * Panel text for one provider: its name and every window's percent,
++     * each tagged with the window label's initial (e.g. S 1% W 17%).
 +     */
 +    _buildPanelItem(provider, providerData, displayMode) {
 +        const box = new St.BoxLayout({
@@ -184,22 +185,27 @@
 +            return box;
 +        }
 +
-+        const windows = ['primary', 'secondary', 'tertiary', 'quaternary']
-+            .map(tier => usage[tier])
-+            .filter(win => win && win.usedPercent !== undefined);
-+        const longest = windows.reduce(
-+            (best, win) => (win.windowMinutes || 0) > (best.windowMinutes || 0) ? win : best,
-+            windows[0]);
-+        if (!longest) return box;
-+
-+        const p = this._normalizePercent(longest.usedPercent);
-+        const percent = (displayMode === 'remaining') ? (100 - p) : p;
-+        box.add_child(new St.Label({
-+            text: `${Math.round(percent)}%`,
-+            y_align: Clutter.ActorAlign.CENTER,
-+            style_class: 'codexbar-panel-percent',
-+            style: `color: ${this._usageColor(percent, displayMode, '#eeeeee')};`,
-+        }));
++        const rateLabels = providerData.data.rateWindowLabels || {};
++        ['primary', 'secondary', 'tertiary', 'quaternary'].forEach(tier => {
++            const win = usage[tier];
++            if (!win || win.usedPercent === undefined) return;
++            const p = this._normalizePercent(win.usedPercent);
++            const percent = (displayMode === 'remaining') ? (100 - p) : p;
++            const tag = (rateLabels[tier] || '').charAt(0);
++            if (tag) {
++                box.add_child(new St.Label({
++                    text: tag,
++                    y_align: Clutter.ActorAlign.CENTER,
++                    style_class: 'codexbar-panel-tag',
++                }));
++            }
++            box.add_child(new St.Label({
++                text: `${Math.round(percent)}%`,
++                y_align: Clutter.ActorAlign.CENTER,
++                style_class: 'codexbar-panel-percent',
++                style: `color: ${this._usageColor(percent, displayMode, '#eeeeee')};`,
++            }));
++        });
 +        return box;
 +    }
 +
@@ -362,9 +368,9 @@
          });
      }
  
---- a/stylesheet.css	2026-10-06 15:57:55.258326045 -0700
-+++ b/stylesheet.css	2026-10-06 15:59:37.305981521 -0700
-@@ -93,3 +93,38 @@
+--- a/stylesheet.css
++++ b/stylesheet.css
+@@ -93,3 +93,43 @@
  .codexbar-footer-button:hover {
      background-color: rgba(255, 255, 255, 0.1);
  }
@@ -400,6 +406,11 @@
 +    margin-right: 4px;
 +}
 +
++.codexbar-panel-tag {
++    color: #aaaaaa;
++    margin-right: 2px;
++}
++
 +.codexbar-panel-percent {
-+    margin-right: 4px;
++    margin-right: 6px;
 +}

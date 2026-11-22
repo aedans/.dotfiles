@@ -17,7 +17,7 @@ application-list=['firefox.desktop:1', 'discord.desktop:1', 'slack.desktop:1', '
 
 [extensions/codexbar]
 first-run=false
-providers='[{"id":"claude","name":"Claude","command":"/home/hans/.local/bin/codexbar --provider claude --source oauth --format json","useApi":false},{"id":"codex-cli","name":"Codex CLI","command":"/home/hans/.local/bin/codexbar --provider codex --source oauth --format json","useApi":false}]'
+providers='[{"id":"claude","name":"Claude","command":"/home/hans/.local/bin/codexbar --provider claude --source oauth --format json","useApi":false}]'
 
 [extensions/custom-accent-colors]
 accent-color='blue'
