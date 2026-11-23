@@ -114,5 +114,6 @@ switch-windows=['<Alt>Tab']
 switch-windows-backward=['<Shift><Alt>Tab']
 
 [wm/preferences]
+audible-bell=false
 button-layout='appmenu:minimize,maximize,close'
 theme='Nordic'
