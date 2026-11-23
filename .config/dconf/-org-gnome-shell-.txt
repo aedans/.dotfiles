@@ -13,7 +13,7 @@ icon-size=20
 tray-pos='right'
 
 [extensions/auto-move-windows]
-application-list=['firefox.desktop:1', 'discord.desktop:1', 'slack.desktop:1', 'code.desktop:2', 'idea-community.desktop:2', 'teams-for-linux.desktop:1', 'steam.desktop:3']
+application-list=['firefox.desktop:1', 'discord.desktop:1', 'slack.desktop:1', 'code.desktop:2', 'idea-community.desktop:2', 'teams-for-linux.desktop:1', 'steam.desktop:3', 'startcenter.desktop:2', 'writer.desktop:2', 'calc.desktop:2', 'impress.desktop:2', 'draw.desktop:2', 'math.desktop:2', 'base.desktop:2']
 
 [extensions/codexbar]
 first-run=false

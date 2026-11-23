@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Colors Libre Nord Dark leaves out, which LibreOffice's GTK stylesheet uses
+     for disabled widgets (light by default): disabled and inactive surfaces
+     in nord1, their text #7b88a1, text on the active color in nord0. -->
+<oor:component-data xmlns:oor="http://openoffice.org/2001/registry" oor:name="UI" oor:package="org.openoffice.Office">
+  <node oor:name="ColorScheme">
+    <node oor:name="ColorSchemes">
+      <node oor:name="Libre Nord Dark" oor:op="fuse">
+        <node oor:name="DisabledColor"><prop oor:name="Color" oor:op="fuse"><value>3883602</value></prop></node>
+        <node oor:name="DisabledTextColor"><prop oor:name="Color" oor:op="fuse"><value>8095905</value></prop></node>
+        <node oor:name="InactiveColor"><prop oor:name="Color" oor:op="fuse"><value>3883602</value></prop></node>
+        <node oor:name="InactiveTextColor"><prop oor:name="Color" oor:op="fuse"><value>8095905</value></prop></node>
+        <node oor:name="ActiveTextColor"><prop oor:name="Color" oor:op="fuse"><value>3028032</value></prop></node>
+      </node>
+    </node>
+  </node>
+</oor:component-data>

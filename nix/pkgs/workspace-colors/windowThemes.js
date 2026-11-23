@@ -29,7 +29,10 @@ const QT_PROCESS_BUS_PREFIX = 'org.hans.WorkspaceTheme.Qt';
 // The process drawing X11 windows' title bars.
 const FRAMES_BUS = 'org.hans.WorkspaceTheme.Frames';
 // Window classes of plain GTK applications without a GTK object path.
-const TITLED_APPS = new Set(['qemu', 'nm-connection-editor', 'gsconnect']);
+// LibreOffice's are its components'; its title bar and menu bar are GTK's.
+const TITLED_APPS = new Set(['qemu', 'nm-connection-editor', 'gsconnect',
+    ...['startcenter', 'writer', 'calc', 'impress', 'draw', 'math', 'base']
+        .map(component => `libreoffice-${component}`)]);
 
 function themeOf(schemes, window) {
     const workspace = window.is_on_all_workspaces() ? null : window.get_workspace();

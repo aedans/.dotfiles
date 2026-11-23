@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LibreOffice's theming, which applies the scheme's UI colors, is off by default. -->
+<oor:component-data xmlns:oor="http://openoffice.org/2001/registry" oor:name="Common" oor:package="org.openoffice.Office">
+  <node oor:name="Appearance">
+    <prop oor:name="LibreOfficeTheme" oor:op="fuse"><value>1</value></prop>
+  </node>
+</oor:component-data>

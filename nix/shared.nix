@@ -21,6 +21,7 @@ in
     /etc/nixos/hardware-configuration.nix
     ./vm.nix
     ./firefox.nix
+    ./libreoffice.nix
   ];
   
   # stylix = {
@@ -51,7 +52,6 @@ in
       lynx
       jdk21
       openjdk25
-      libreoffice
       dolphin-emu
       icu
       ocl-icd
