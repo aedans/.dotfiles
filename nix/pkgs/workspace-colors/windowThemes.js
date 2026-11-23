@@ -31,6 +31,7 @@ const FRAMES_BUS = 'org.hans.WorkspaceTheme.Frames';
 // Window classes of plain GTK applications without a GTK object path.
 // LibreOffice's are its components'; its title bar and menu bar are GTK's.
 const TITLED_APPS = new Set(['qemu', 'nm-connection-editor', 'gsconnect',
+    'org.pulseaudio.pavucontrol',
     ...['startcenter', 'writer', 'calc', 'impress', 'draw', 'math', 'base']
         .map(component => `libreoffice-${component}`)]);
 

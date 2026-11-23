@@ -10,6 +10,7 @@
 // named by its window's title. Windows that belong to another follow it (see
 // windows.c).
 #define G_LOG_DOMAIN "workspace-theme"
+#include <dlfcn.h>
 #include <unistd.h>
 
 #include "terminal.h"
@@ -22,9 +23,9 @@
 #define FRAMES_PROGRAM "mutter-x11-frames"
 // Above libadwaita's "* { transition: none; }" during its own style switches.
 #define PROVIDER_PRIORITY 10001
-// GTK 3's themes replace the desktop's theme and settings, below applications'
-// own stylesheets.
-#define GTK3_THEMES_PRIORITY (GTK_STYLE_PROVIDER_PRIORITY_APPLICATION - 1)
+// GTK 3's themes, and GTK 4's without libadwaita, replace the desktop's theme
+// and settings, below applications' own stylesheets.
+#define THEMES_PRIORITY (GTK_STYLE_PROVIDER_PRIORITY_APPLICATION - 1)
 
 static const char introspection_xml[] =
     "<node>"
@@ -139,9 +140,18 @@ G_MODULE_EXPORT void gtk_module_init(void)
 #endif
 {
 #ifdef MODULE_GTK3
-    add_css_provider(GTK3_THEMES_CSS, GTK3_THEMES_PRIORITY);
-#endif
+    add_css_provider(GTK3_THEMES_CSS, THEMES_PRIORITY);
     add_css_provider(THEME_CSS, PROVIDER_PRIORITY);
+#else
+    // libadwaita replaces GTK's theme with its own, which the themes recolor
+    // through its variables; GTK's own has none, so it's replaced whole.
+    if (dlsym(RTLD_DEFAULT, "adw_init")) {
+        add_css_provider(THEME_CSS, PROVIDER_PRIORITY);
+    } else {
+        add_css_provider(GTK4_THEMES_CSS, THEMES_PRIORITY);
+        add_css_provider(GTK4_PLAIN_CSS, PROVIDER_PRIORITY);
+    }
+#endif
     terminal_setup(PROVIDER_PRIORITY);
     windows_setup();
     export_object();

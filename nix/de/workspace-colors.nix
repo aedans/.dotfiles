@@ -25,11 +25,20 @@ let
     faded = stylesheets.faded.gtk3;
   };
   gtk4Fade = pkgs.callPackage (dir + "/gtk4-fade.nix") { faded = stylesheets.faded.gtk4; };
+  gtk4Themes = pkgs.callPackage (dir + "/gtk4-themes.nix") {
+    inherit themes;
+    faded = stylesheets.faded.gtk4;
+  };
   gtkModule = pkgs.callPackage (dir + "/gtk-module") {
     css = pkgs.concatText "workspace-themes-gtk4.css" [
       (pkgs.writeText "workspace-colors-gtk4.css" stylesheets.gtk4)
       "${gtk4Fade}/fade.css"
     ];
+    gtk4PlainCss = pkgs.concatText "workspace-themes-gtk4-plain.css" [
+      (pkgs.writeText "workspace-colors-gtk4.css" stylesheets.gtk4)
+      "${gtk4Themes}/fade.css"
+    ];
+    gtk4Themes = "${gtk4Themes}/themes.css";
     gtk3Css = pkgs.concatText "workspace-themes-gtk3.css" [
       (pkgs.writeText "workspace-fade-gtk3.css" stylesheets.gtk3)
       "${gtk3Themes}/fade.css"

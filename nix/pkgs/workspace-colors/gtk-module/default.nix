@@ -3,12 +3,14 @@
 # GTK_MODULES: put this package's lib/gtk-* in GTK_PATH (NixOS does for the
 # system profile) and "workspace-theme" in GTK_MODULES. GTK 4 needs
 # patches/gtk4-modules.patch for that.
-# css / gtk3Css: stylesheets defining ws-<theme> window classes and
-# ws-animating transitions, for GTK 4 and GTK 3 applications. gtk3Themes: GTK 3's
-# themes themselves (see gtk3-themes.nix), below applications' own stylesheets.
+# css / gtk4PlainCss / gtk3Css: stylesheets defining ws-<theme> window classes
+# and ws-animating transitions, for GTK 4 applications with and without
+# libadwaita and GTK 3 applications. gtk4Themes / gtk3Themes: GTK 4's
+# (without libadwaita) and GTK 3's themes themselves (see gtk4-themes.nix and
+# gtk3-themes.nix), below applications' own stylesheets.
 # terminalPalettes: { <theme> = { foreground; background; palette = [ 16 colors ]; }; }
 # for VTE terminals.
-{ lib, stdenv, pkg-config, gtk3, gtk4, writeText, css, gtk3Css ? writeText "empty.css" "", gtk3Themes ? writeText "empty.css" "", terminalPalettes ? { } }:
+{ lib, stdenv, pkg-config, gtk3, gtk4, writeText, css, gtk4PlainCss ? css, gtk4Themes ? writeText "empty.css" "", gtk3Css ? writeText "empty.css" "", gtk3Themes ? writeText "empty.css" "", terminalPalettes ? { } }:
 let
   palettes = writeText "terminal-palettes.ini" (lib.generators.toINI { } (lib.mapAttrs
     (theme: p: p // { palette = lib.concatStringsSep ";" p.palette; })
@@ -29,7 +31,8 @@ stdenv.mkDerivation {
         ${./module.c} ${./windows.c} ${./terminal.c} -I${./.} $(pkg-config --cflags $2) \
         -DTERMINAL_PALETTES='"${palettes}"' "''${@:3}"
     }
-    module gtk4.so gtk4 -DTHEME_CSS='"${css}"'
+    module gtk4.so gtk4 -DTHEME_CSS='"${css}"' -DGTK4_PLAIN_CSS='"${gtk4PlainCss}"' \
+      -DGTK4_THEMES_CSS='"${gtk4Themes}"'
     module gtk3.so gtk+-3.0 -DTHEME_CSS='"${gtk3Css}"' -DMODULE_GTK3 \
       -DGTK3_THEMES_CSS='"${gtk3Themes}"'
   '';
