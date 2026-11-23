@@ -8,8 +8,6 @@
 # it. The guest journal is mirrored to vm-journal/journal.txt next to the disk.
 { pkgs, lib, ... }:
 let
-  colloidIcons = pkgs.colloid-icon-theme.override { schemeVariants = [ "nord" ]; };
-
   # What bootstrap.sh dconf-loads on the host, as one keyfile directory with
   # sections made absolute (dumps are relative to their root).
   dconfDumps = pkgs.runCommand "dconf-dumps" { } ''
@@ -57,10 +55,7 @@ in
 
     services.displayManager.autoLogin = { enable = true; user = "hans"; };
     services.gnome.gnome-initial-setup.enable = false;
-    users.users.hans = {
-      password = "hans";
-      packages = [ colloidIcons ];
-    };
+    users.users.hans.password = "hans";
 
     # Earlier databases win, so the VM's shortcuts come before the dumps.
     programs.dconf.profiles.user.databases = [

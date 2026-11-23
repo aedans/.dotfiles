@@ -9,8 +9,6 @@ if [[ $# -eq 0 ]] ; then
   exit 0
 fi
 
-bash ./Colloid-icon-theme/install.sh --scheme nord
-
 sudo nixos-rebuild switch --flake .#$1 --impure
 
 nix-shell -p stow --command "stow . --no-folding"

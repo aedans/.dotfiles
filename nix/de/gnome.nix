@@ -1,6 +1,7 @@
 { pkgs, ... }:
 let
   codexbar = pkgs.callPackage ../pkgs/codexbar.nix { };
+  colloidIcons = pkgs.callPackage ../pkgs/colloid-icons.nix { };
   # Show every provider stacked in the menu instead of one tab at a time.
   codexbarExtension = pkgs.gnomeExtensions.codexbar.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ../pkgs/codexbar-extension-stacked.patch ];
@@ -27,6 +28,7 @@ in
     gnome-tweaks
     gnome-connections
     apostrophe
+    colloidIcons
     gnomeExtensions.auto-move-windows
     gnomeExtensions.caffeine
     gnomeExtensions.user-themes
