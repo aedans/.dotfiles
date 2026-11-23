@@ -39,6 +39,10 @@ in
     codexbar
   ];
 
+  # GTK 3 only knows Adwaita-dark as an installed theme; without it, apps that
+  # read the GTK theme instead of the portal (Electron under X11) see light.
+  environment.systemPackages = [ pkgs.gnome-themes-extra ];
+
   # The CodexBar extension only probes fixed paths for its CLI, not PATH.
   home-manager.users.hans.home.file.".local/bin/codexbar".source =
     "${codexbar}/bin/codexbar";
