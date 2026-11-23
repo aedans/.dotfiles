@@ -79,6 +79,14 @@ let
       color: var(--popover-fg-color);
     }
 
+    /* Apostrophe's editor is a GtkSourceView whose style scheme colors its text
+     * with concrete colors; these put the theme's view colors back. */
+    window .apostrophe-editor,
+    window .apostrophe-editor > text {
+      background-color: var(--view-bg-color);
+      color: var(--view-fg-color);
+    }
+
     /* Only while a theme change is in flight, so hover effects keep their speed.
      * As long as the workspace slide, and eased like it (ease-out cubic). */
     window.ws-animating,

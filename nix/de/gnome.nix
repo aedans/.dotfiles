@@ -26,6 +26,7 @@ in
     ptyxis
     gnome-tweaks
     gnome-connections
+    apostrophe
     gnomeExtensions.auto-move-windows
     gnomeExtensions.caffeine
     gnomeExtensions.user-themes

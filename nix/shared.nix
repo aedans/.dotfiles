@@ -40,7 +40,6 @@ in
     packages = with pkgs; [
       chromium
       vscode
-      obsidian
       jetbrains.idea
       discord
       keepassxc
