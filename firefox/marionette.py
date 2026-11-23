@@ -2,6 +2,7 @@
 # run scripts inside extension pages, where the extensions' own APIs are.
 
 import json
+import os
 import socket
 import subprocess
 import time
@@ -64,7 +65,9 @@ class Firefox:
         command = ["firefox", "--headless", "--marionette", "--remote-allow-system-access", "--no-remote"]
         if self.profile:
             command += ["--profile", self.profile]
-        self.process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Newer Firefox ignores --remote-allow-system-access without this.
+        env = {**os.environ, "MOZ_REMOTE_ALLOW_SYSTEM_ACCESS": "1"}
+        self.process = subprocess.Popen(command, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:
             self.marionette = Marionette()
             self.marionette.command("WebDriver:NewSession", {"capabilities": {}})
