@@ -35,6 +35,21 @@ in
 {
   imports = [ ./shell-theme.nix ./workspace-colors.nix ./login-background.nix ];
 
+  # Smooth window paths as the overview opens and closes. Between the session
+  # and the window picker, windows move in a straight line relative to the
+  # workspace, from their own size to their slots in the window picker, so a
+  # centered window doesn't drift or change size in jumps, and a fullscreen
+  # one doesn't uncover the workspace background's fill. Windows smaller than
+  # their slots grow about their centers, and only as they head to them, so
+  # leaving the app grid doesn't snap them to slot size halfway.
+  nixpkgs.overlays = [
+    (final: prev: {
+      gnome-shell = prev.gnome-shell.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ../pkgs/gnome-shell-overview-windows.patch ];
+      });
+    })
+  ];
+
   services = {
     displayManager.gdm.enable = true;
     desktopManager.gnome.enable = true;

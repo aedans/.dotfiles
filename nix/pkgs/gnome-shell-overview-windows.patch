@@ -1,0 +1,154 @@
+Overview window paths; see nix/de/gnome.nix.
+
+--- a/js/ui/workspace.js
++++ b/js/ui/workspace.js
+@@ -500,13 +500,29 @@
+             const bottomPoint = new Graphene.Point3D({y: containerBox.y2});
+             const transformedBottomPoint =
+                 this._container.apply_transform_to_point(bottomPoint);
+-            const bottomFreeSpace =
++            let bottomFreeSpace =
+                 (monitor.y + monitor.height) - transformedBottomPoint.y;
+ 
+             const [, bottomOverlap] = window.overlapHeights();
+ 
+-            if ((bottomOverlap + oversize) > bottomFreeSpace)
+-                containerBox.y2 -= (bottomOverlap + oversize) - bottomFreeSpace;
++            let overflow = (bottomOverlap + oversize) - bottomFreeSpace;
++
++            // While the overview shows or hides, slots are for the window
++            // picker (see vfunc_allocate), so fit them to the space below the
++            // workspace there. That space changes as the dash shows, so ease
++            // them into it.
++            const pickerBox = this._getPickerBox();
++            if (pickerBox) {
++                const [, controlsY] =
++                    Main.overview._overview.controls.get_transformed_position();
++                bottomFreeSpace =
++                    (monitor.y + monitor.height) - (controlsY + pickerBox.y2);
++                overflow = ((bottomOverlap + oversize) - bottomFreeSpace) *
++                    this._stateAdjustment.value;
++            }
++
++            if (overflow > 0)
++                containerBox.y2 -= overflow;
+         }
+ 
+         return [rowSpacing, colSpacing, containerBox];
+@@ -626,6 +642,22 @@
+         return [0, heightPreservingAspectRatio];
+     }
+ 
++    // The primary monitor's workspaces box in the window picker, relative to
++    // the overview's controls, while the overview shows or hides it (not the
++    // app grid); null otherwise.
++    _getPickerBox() {
++        const {ControlsState} = OverviewControls;
++        const {initialState, finalState} =
++            this._overviewAdjustment.getStateTransitionParams();
++        if (initialState > ControlsState.WINDOW_PICKER ||
++            finalState > ControlsState.WINDOW_PICKER ||
++            this._monitorIndex !== Main.layoutManager.primaryIndex)
++            return null;
++
++        const controls = Main.overview._overview?.controls;
++        return controls?.getWorkspacesBoxForState(ControlsState.WINDOW_PICKER) ?? null;
++    }
++
+     vfunc_allocate(container, box) {
+         const containerBox = container.allocation;
+         const [containerWidth, containerHeight] = containerBox.get_size();
+@@ -680,19 +712,47 @@
+             }
+         }
+ 
+-        const slotsScale = box.get_width() / this._windowSlotsBox.get_width();
++        let slots = this._windowSlots;
++        let slotsScale = box.get_width() / this._windowSlotsBox.get_width();
+         const workareaX = this._workarea.x;
+         const workareaY = this._workarea.y;
+         const workareaWidth = this._workarea.width;
+         const stateAdjustementValue = this._stateAdjustment.value;
+ 
+-        const allocationScale = containerWidth / workareaWidth;
++        let allocationScale = containerWidth / workareaWidth;
++
++        // While the overview shows or hides, the workspace moves in a
++        // straight line between the work area and the window picker. Move
++        // windows likewise, relative to it, from where they are to their
++        // slots in the window picker: a window that fills the workspace at
++        // both ends fills it on the way, and one within it stays within it,
++        // without drifting or changing size unevenly.
++        const pickerBox = this._getPickerBox();
++        if (pickerBox) {
++            const workarea = this._getAdjustedWorkarea(container);
++            const aspectRatio = workarea.width / workarea.height;
++            const [pickerWidth, pickerHeight] =
++                global.workspaceManager.layout_rows === -1
++                    ? [pickerBox.get_width(), pickerBox.get_width() / aspectRatio]
++                    : [pickerBox.get_height() * aspectRatio, pickerBox.get_height()];
++
++            if (this._layoutFrozen) {
++                slotsScale = pickerWidth / this._windowSlotsBox.get_width();
++            } else {
++                slots = this._getWindowSlots(new Clutter.ActorBox({
++                    x2: pickerWidth,
++                    y2: pickerHeight,
++                }));
++                slotsScale = 1;
++            }
++            allocationScale = 1;
++        }
+ 
+         const childBox = new Clutter.ActorBox();
+ 
+-        const nSlots = this._windowSlots.length;
++        const nSlots = slots.length;
+         for (let i = 0; i < nSlots; i++) {
+-            let [x, y, width, height, child] = this._windowSlots[i];
++            let [x, y, width, height, child] = slots[i];
+             if (!child.visible)
+                 continue;
+ 
+@@ -703,6 +763,20 @@
+ 
+             const windowInfo = this._windows.get(child);
+ 
++            // A preview shows its window at most at its own size, from its
++            // top left, while a frozen layout scales the slots with the
++            // container. Keep the slot within the window's size, about its
++            // center, so that the window stays centered in it.
++            const maxScale = Math.min(1,
++                child.boundingBox.width / width,
++                child.boundingBox.height / height);
++            if (maxScale < 1) {
++                x += width * (1 - maxScale) / 2;
++                y += height * (1 - maxScale) / 2;
++                width *= maxScale;
++                height *= maxScale;
++            }
++
+             let workspaceBoxX, workspaceBoxY;
+             let workspaceBoxWidth, workspaceBoxHeight;
+ 
+@@ -724,9 +798,18 @@
+             // We only want to apply this when the scaled floating size is
+             // actually larger than the target layout size, that is while
+             // animating between the session and the window picker.
++            // Grow it about its center, so that the window doesn't drift
++            // away from its path and back, and only as far as it heads to
++            // the slot: between the app grid and the session it doesn't.
+             if (inSessionTransition) {
+-                workspaceBoxWidth = Math.max(workspaceBoxWidth, width);
+-                workspaceBoxHeight = Math.max(workspaceBoxHeight, height);
++                const growX =
++                    Math.max(width - workspaceBoxWidth, 0) * stateAdjustementValue;
++                const growY =
++                    Math.max(height - workspaceBoxHeight, 0) * stateAdjustementValue;
++                workspaceBoxX -= growX / 2;
++                workspaceBoxY -= growY / 2;
++                workspaceBoxWidth += growX;
++                workspaceBoxHeight += growY;
+             }
+ 
+             x = Util.lerp(workspaceBoxX, x, stateAdjustementValue);
