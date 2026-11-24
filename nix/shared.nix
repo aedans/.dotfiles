@@ -25,7 +25,7 @@
       vscode
       jetbrains.idea
       discord
-      keepassxc
+      gnome-secrets
       git
       gh
       python3
