@@ -23,10 +23,10 @@ function closestCrop(crops, monitor) {
 }
 
 // The image, zoomed to fill the monitor, over the color, which shows until
-// the image has loaded.
-function backgroundOf({background, image}, monitor) {
+// the image has loaded. version: the crop's file to show, file or blurred.
+export function backgroundOf({background, image}, monitor, version = 'file') {
     const [, color] = Cogl.Color.from_string(background);
-    const file = image && monitor ? Gio.File.new_for_path(closestCrop(image, monitor).file) : null;
+    const file = image && monitor ? Gio.File.new_for_path(closestCrop(image, monitor)[version]) : null;
     return {file, color};
 }
 

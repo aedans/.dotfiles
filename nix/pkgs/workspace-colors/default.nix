@@ -13,9 +13,27 @@ let
   shapes = [ [ 16 9 ] [ 16 10 ] [ 21 9 ] [ 32 9 ] [ 3 2 ] [ 4 3 ] [ 5 4 ] ];
   shapeName = shape: "${toString (lib.elemAt shape 0)}x${toString (lib.elemAt shape 1)}";
 
-  # [{ aspect; file; }]: the image cropped to each shape about its anchor.
+  # A crop as the top bar's backdrop (see panelBackdrop.js): blurred and
+  # darkened as Blur my Shell's default blur does, and shrunk, since GNOME's
+  # zooming it back up to fill the monitor can't lose any detail it still has.
+  # The blur's spread is a fraction of the image's height, so it looks the
+  # same at any size it's shown.
+  blurredHeight = 270;
+  blurredSigma = 6;
+  blurredBrightness = 60;
+  blur = from: to: ''
+    magick ${from} -resize x${toString blurredHeight} -blur 0x${toString blurredSigma} \
+      -fill black -colorize ${toString (100 - blurredBrightness)}% ${to}
+  '';
+
+  # [{ aspect; file; blurred; }]: the image cropped to each shape about its
+  # anchor.
   crops = { image, anchor ? null, ... }:
-    if anchor == null then [ { aspect = 1; file = image; } ]
+    if anchor == null then
+      let
+        blurred = runCommand "wallpaper-blurred.png" { nativeBuildInputs = [ imagemagick ]; } (blur image "png:$out");
+      in
+      [ { aspect = 1; file = image; inherit blurred; } ]
     else
       let
         cropped = runCommand "wallpaper-crops" { nativeBuildInputs = [ imagemagick ]; } ''
@@ -28,12 +46,14 @@ let
                 printf "%dx%d+%d+%d", cw, ch, int((W - cw) * ax), int((H - ch) * ay)
               }')
             magick ${image} -crop "$geometry" +repage -quality 92 $out/$shape.jpg
+            ${blur "$out/$shape.jpg" "$out/$shape-blurred.png"}
           done
         '';
       in
       map (shape: {
         aspect = lib.elemAt shape 0 * 1.0 / lib.elemAt shape 1;
         file = "${cropped}/${shapeName shape}.jpg";
+        blurred = "${cropped}/${shapeName shape}-blurred.png";
       }) shapes;
 
   schemes = map (name:

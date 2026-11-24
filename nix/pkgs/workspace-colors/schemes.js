@@ -1,8 +1,9 @@
 // schemes.json: one scheme per workspace; workspaces past the end wrap
 // around. Only panel and dock are required.
 //   panel, dock, background    CSS colors
-//   image     wallpaper crops, one per screen shape: [{aspect, file}]; each
-//             monitor shows the closest, over the background color
+//   image     wallpaper crops, one per screen shape: [{aspect, file, blurred}];
+//             each monitor shows the closest, over the background color, and
+//             the top bar the blurred one (see panelBackdrop.js)
 //   cursor    the color the cursor theme's accent takes (see cursor.js)
 //   theme     names a theme: the ws-<theme> class given to the shell (see
 //             stylesheet.css) and to windows of applications running the GTK

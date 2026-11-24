@@ -7,9 +7,10 @@ export function rgb(css) {
     return [color.red, color.green, color.blue];
 }
 
-export function coglColor(color) {
+// opacity in 0..1.
+export function coglColor(color, opacity = 1) {
     const [red, green, blue] = color.map(Math.round);
-    return new Cogl.Color({red, green, blue, alpha: 255});
+    return new Cogl.Color({red, green, blue, alpha: Math.round(255 * opacity)});
 }
 
 // The blend of colors, one per scheme, by a weight per scheme (see fade.js).
