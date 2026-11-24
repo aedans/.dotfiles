@@ -131,6 +131,28 @@ static void export_object(void)
                                      NULL, NULL, NULL, NULL);
 }
 
+#ifndef MODULE_GTK3
+// libadwaita replaces GTK's theme with its own, which the themes recolor
+// through its variables; GTK's own has none, so it's replaced whole. Whether
+// libadwaita styles the process is only known once it's initialized, which can
+// be after GTK (Python applications may load it after a library that pulls in
+// GTK), so the stylesheets are chosen as the first window is realized.
+static gboolean choose_gtk4_stylesheets(GSignalInvocationHint *hint, guint n_params,
+                                        const GValue *params, gpointer data)
+{
+    if (!GTK_IS_WINDOW(g_value_get_object(&params[0])))
+        return TRUE;
+    gboolean (*adw_is_initialized)(void) = dlsym(RTLD_DEFAULT, "adw_is_initialized");
+    if (adw_is_initialized && adw_is_initialized()) {
+        add_css_provider(THEME_CSS, PROVIDER_PRIORITY);
+    } else {
+        add_css_provider(GTK4_THEMES_CSS, THEMES_PRIORITY);
+        add_css_provider(GTK4_PLAIN_CSS, PROVIDER_PRIORITY);
+    }
+    return FALSE;
+}
+#endif
+
 // GTK calls this once the default display is open: GTK 3 natively, GTK 4
 // through the GTK_MODULES support patched into it.
 #ifdef MODULE_GTK3
@@ -143,14 +165,9 @@ G_MODULE_EXPORT void gtk_module_init(void)
     add_css_provider(GTK3_THEMES_CSS, THEMES_PRIORITY);
     add_css_provider(THEME_CSS, PROVIDER_PRIORITY);
 #else
-    // libadwaita replaces GTK's theme with its own, which the themes recolor
-    // through its variables; GTK's own has none, so it's replaced whole.
-    if (dlsym(RTLD_DEFAULT, "adw_init")) {
-        add_css_provider(THEME_CSS, PROVIDER_PRIORITY);
-    } else {
-        add_css_provider(GTK4_THEMES_CSS, THEMES_PRIORITY);
-        add_css_provider(GTK4_PLAIN_CSS, PROVIDER_PRIORITY);
-    }
+    g_type_class_ref(GTK_TYPE_WIDGET);
+    g_signal_add_emission_hook(g_signal_lookup("realize", GTK_TYPE_WIDGET), 0,
+                               choose_gtk4_stylesheets, NULL, NULL);
 #endif
     terminal_setup(PROVIDER_PRIORITY);
     windows_setup();
