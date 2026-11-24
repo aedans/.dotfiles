@@ -31,7 +31,7 @@ stdenv.mkDerivation {
         ${./module.c} ${./windows.c} ${./terminal.c} -I${./.} $(pkg-config --cflags $2) \
         -DTERMINAL_PALETTES='"${palettes}"' "''${@:3}"
     }
-    module gtk4.so gtk4 -DTHEME_CSS='"${css}"' -DGTK4_PLAIN_CSS='"${gtk4PlainCss}"' \
+    module gtk4.so gtk4 ${./sidebars.c} -DTHEME_CSS='"${css}"' -DGTK4_PLAIN_CSS='"${gtk4PlainCss}"' \
       -DGTK4_THEMES_CSS='"${gtk4Themes}"'
     module gtk3.so gtk+-3.0 -DTHEME_CSS='"${gtk3Css}"' -DMODULE_GTK3 \
       -DGTK3_THEMES_CSS='"${gtk3Themes}"'

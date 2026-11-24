@@ -38,6 +38,18 @@ let
     --dialog-fg-color: ${ui.text};
   '';
 
+  # Windows showing a sidebar beside their content (see gtk-module/sidebars.c)
+  # let the shell's blur through it, tinted by its color at this opacity,
+  # unless they fill the screen, as the top bar turns solid against them.
+  # !!! On GNOME 51 (GTK 4.24), blur here with backdrop-filter instead of Blur
+  # my Shell blurring behind whole windows; see nix/de/gnome.nix. !!!
+  sidebarWindow = "window.ws-sidebar:not(.maximized):not(.fullscreen)";
+  sidebarOpacity = 0.7;
+  translucentSidebarVariables = { ui, ... }: ''
+    --sidebar-bg-color: alpha(${ui.sidebar}, ${toString sidebarOpacity});
+    --sidebar-backdrop-color: alpha(${ui.window}, ${toString sidebarOpacity});
+  '';
+
   # Every theme lists the same filter functions, so GTK can interpolate them.
   iconFilter = { icons, ... }:
     "drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.3)) sepia(${toString icons.sepia}) "
@@ -46,10 +58,16 @@ let
   gtk4 = ''
     window {
     ${adwaitaVariables themes.${default}}}
+
+    ${sidebarWindow} {
+    ${translucentSidebarVariables themes.${default}}}
   '' + forThemes (name: theme: ''
 
     window.ws-${name} {
     ${adwaitaVariables theme}}
+
+    ${sidebarWindow}.ws-${name} {
+    ${translucentSidebarVariables theme}}
 
     /* Nautilus's file icons are full-color images; thumbnails share the node
      * but carry .thumbnail and are left alone. */
@@ -57,6 +75,23 @@ let
       filter: ${iconFilter theme};
     }
   '') + ''
+
+    /* The window is clear behind the sidebar, which shows the shell's blur
+     * through its translucent color, and the content paints the window's color
+     * over it. */
+    window.ws-sidebar.background {
+      background-color: transparent;
+    }
+    window.ws-sidebar .content-pane {
+      background-color: var(--window-bg-color);
+    }
+    /* The sidebar's edge would draw as a dark line over the blur; the content's
+     * color sets the two apart. It turns solid and back as long as the window's
+     * animation into and out of filling the screen, and eased like it. */
+    window.ws-sidebar .sidebar-pane {
+      box-shadow: none;
+      transition: background-color 250ms cubic-bezier(0.33, 1, 0.68, 1);
+    }
 
     /* Ptyxis colors its window from the terminal palette with concrete colors,
      * not libadwaita's variables; this stylesheet's priority is above Ptyxis's,

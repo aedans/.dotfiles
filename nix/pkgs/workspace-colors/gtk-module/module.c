@@ -8,11 +8,14 @@
 // dialogs wear until they're named. Mutter's process drawing X11 windows' title
 // bars owns org.hans.WorkspaceTheme.Frames as well, where each title bar is
 // named by its window's title. Windows that belong to another follow it (see
-// windows.c).
+// windows.c). GTK 4 windows showing a sidebar are marked (see sidebars.c).
 #define G_LOG_DOMAIN "workspace-theme"
 #include <dlfcn.h>
 #include <unistd.h>
 
+#ifndef MODULE_GTK3
+#include "sidebars.h"
+#endif
 #include "terminal.h"
 #include "toolkit.h"
 #include "windows.h"
@@ -168,6 +171,7 @@ G_MODULE_EXPORT void gtk_module_init(void)
     g_type_class_ref(GTK_TYPE_WIDGET);
     g_signal_add_emission_hook(g_signal_lookup("realize", GTK_TYPE_WIDGET), 0,
                                choose_gtk4_stylesheets, NULL, NULL);
+    sidebars_setup();
 #endif
     terminal_setup(PROVIDER_PRIORITY);
     windows_setup();
