@@ -17,9 +17,10 @@
 }
 
 /* Recolored by chrome.js's colorize effect. The border takes its color, as
- * dash-to-dock's does. */
+ * dash-to-dock's does. Blur my Shell's dock classes would clear it with
+ * !important; chrome.js makes it translucent instead. */
 #dashtodockContainer #dash .dash-background {
-  background-color: white;
+  background-color: white !important;
   border-color: white;
   transition-duration: 0ms;
 }
@@ -49,4 +50,17 @@
 #dash .dash-item-container .show-apps:hover .overview-icon,
 #dash .dash-item-container .overview-tile:hover .overview-icon {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Blur my Shell's dark popups make GNOME's buttons translucent, but not
+ * Vitals' menu buttons, which would stay solid over the blur. */
+.bms-popup-background-dark .vitals-button-action {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+.bms-popup-background-dark .vitals-button-action:hover,
+.bms-popup-background-dark .vitals-button-action:focus {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+.bms-popup-background-dark .vitals-button-action:active {
+  background-color: rgba(255, 255, 255, 0.3) !important;
 }

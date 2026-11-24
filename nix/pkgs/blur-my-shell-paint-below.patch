@@ -1,0 +1,44 @@
+!!! Costly: mutter paints everything behind every blurred window. Drop this
+with Blur my Shell's application blur on GNOME 51; see nix/de/gnome.nix. !!!
+
+--- a/components/applications/index.js
++++ b/components/applications/index.js
+@@ -1,4 +1,6 @@
++import Clutter from 'gi://Clutter';
+ import Gio from 'gi://Gio';
++import GObject from 'gi://GObject';
+ import Meta from 'gi://Meta';
+ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+ 
+@@ -14,6 +16,15 @@
+ import { compute_scale, place_dynamic_blur, place_static_blur } from './window_geometry.js';
+ import { finish_preview_fade } from './overview_drag.js';
+ 
++/// Mutter doesn't paint what lies below a window's opaque parts, but dynamic
++/// blur reads it: next to them, it would blur in the unpainted black. Mutter
++/// paints below windows with an effect, so this one, which changes nothing,
++/// keeps it painted.
++const PAINT_BELOW_EFFECT = 'bms-paint-below';
++const PaintBelowEffect = GObject.registerClass(
++    class PaintBelowEffect extends Clutter.Effect { }
++);
++
+ export const ApplicationsBlur = class ApplicationsBlur {
+     constructor(connections, settings, effects_manager) {
+         this.connections = connections;
+@@ -367,6 +378,7 @@
+             [blur_actor, bg_manager] = pipeline.create_background_with_effect(
+                 window_actor, BLUR_ACTOR_NAME
+             );
++            window_actor.add_effect_with_name(PAINT_BELOW_EFFECT, new PaintBelowEffect());
+         }
+ 
+         meta_window.blur_actor = blur_actor;
+@@ -495,6 +507,7 @@
+         this.blur_signal_ids.delete(meta_window);
+ 
+         this.window_opacity.set(meta_window.get_compositor_private(), 255, blur_actor);
++        meta_window.get_compositor_private()?.remove_effect_by_name(PAINT_BELOW_EFFECT);
+ 
+         const bg_manager = meta_window.bg_manager;
+         meta_window.bms_rounded_pipeline?.destroy();

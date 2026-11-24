@@ -2,7 +2,7 @@
 always-show-log-out=true
 disable-user-extensions=false
 disabled-extensions=['system-monitor@gnome-shell-extensions.gcampax.github.com', 'native-window-placement@gnome-shell-extensions.gcampax.github.com', 'windowsNavigator@gnome-shell-extensions.gcampax.github.com', 'workspace-indicator@gnome-shell-extensions.gcampax.github.com', 'places-menu@gnome-shell-extensions.gcampax.github.com', 'drive-menu@gnome-shell-extensions.gcampax.github.com', 'window-list@gnome-shell-extensions.gcampax.github.com', 'apps-menu@gnome-shell-extensions.gcampax.github.com']
-enabled-extensions=['user-theme@gnome-shell-extensions.gcampax.github.com', 'just-perfection-desktop@just-perfection', 'dash-to-dock@micxgx.gmail.com', 'auto-move-windows@gnome-shell-extensions.gcampax.github.com', 'Vitals@CoreCoding.com', 'appindicatorsupport@rgcjonas.gmail.com', 'tailscale-status@maxgallup.github.com', 'codexbar@inled.es', 'workspace-colors@hans', 'caffeine@patapon.info', 'gsconnect@andyholmes.github.io']
+enabled-extensions=['user-theme@gnome-shell-extensions.gcampax.github.com', 'just-perfection-desktop@just-perfection', 'dash-to-dock@micxgx.gmail.com', 'auto-move-windows@gnome-shell-extensions.gcampax.github.com', 'Vitals@CoreCoding.com', 'appindicatorsupport@rgcjonas.gmail.com', 'tailscale-status@maxgallup.github.com', 'codexbar@inled.es', 'workspace-colors@hans', 'blur-my-shell@aunetx', 'caffeine@patapon.info', 'gsconnect@andyholmes.github.io']
 favorite-apps=['firefox.desktop', 'org.gnome.Nautilus.desktop', 'discord.desktop', 'code.desktop', 'idea-oss.desktop', 'steam.desktop']
 
 [app-switcher]
@@ -14,6 +14,24 @@ tray-pos='right'
 
 [extensions/auto-move-windows]
 application-list=['firefox.desktop:1', 'discord.desktop:1', 'slack.desktop:1', 'code.desktop:2', 'idea-community.desktop:2', 'teams-for-linux.desktop:1', 'steam.desktop:3', 'startcenter.desktop:2', 'writer.desktop:2', 'calc.desktop:2', 'impress.desktop:2', 'draw.desktop:2', 'math.desktop:2', 'base.desktop:2']
+
+[extensions/blur-my-shell/applications]
+blur=true
+blur-on-overview=true
+dynamic-opacity=false
+enable-all=true
+opacity=255
+static-blur=false
+unblur-when-fullscreen=true
+
+[extensions/blur-my-shell/dash-to-dock]
+blur=false
+
+[extensions/blur-my-shell/overview]
+blur=false
+
+[extensions/blur-my-shell/panel]
+blur=false
 
 [extensions/codexbar]
 first-run=false
