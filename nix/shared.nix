@@ -70,6 +70,8 @@
 
     steam = {
       enable = true;
+      # home/steam.nix configures Millennium's theme
+      package = import ./pkgs/steam-with-millennium.nix { inherit pkgs pkgs-unstable; };
       extraCompatPackages = [ pkgs.proton-ge-bin pkgs.proton-cachyos ];
       remotePlay.openFirewall = true; 
       dedicatedServer.openFirewall = true;
