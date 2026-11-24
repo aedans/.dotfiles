@@ -38,7 +38,7 @@
       icu
       ocl-icd
       intel-compute-runtime
-      pavucontrol
+      pwvucontrol
       lsof
       qemu
       vulkan-hdr-layer-kwin6
