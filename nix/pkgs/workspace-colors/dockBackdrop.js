@@ -90,13 +90,19 @@ class RoundedCorners extends Shell.GLSLEffect {
 export function showDockBackdrop(schemes, dash, monitorIndex) {
     const background = dash._background;
     const strip = createWallpaperStrip(schemes, () => monitorIndex);
-    // The dash centers each child at its own size, and neither this nor the
-    // strip asks for any, so both are bound to the background's box.
-    const actor = new Clutter.Actor();
-    actor.add_constraint(new Clutter.BindConstraint({
-        source: background,
-        coordinate: Clutter.BindCoordinate.ALL,
-    }));
+    // The dash fills its expanding children's room, less their margins, and
+    // centers the rest at their own size, which the background's fills. With
+    // the background's margins, expanding fills the same in the same layout
+    // pass; a constraint bound to the background, laid out after this, would
+    // see its size from the pass before. The margins are on a plain actor, as
+    // St sets its widgets' margins from their styles. The strip asks for no
+    // size, so it's bound to this, laid out before it.
+    const actor = new Clutter.Actor({x_expand: true, y_expand: true});
+    const fit = () => {
+        const sides = ['margin_top', 'margin_right', 'margin_bottom', 'margin_left'];
+        actor.set(Object.fromEntries(sides.map(side => [side, background[side]])));
+    };
+    fit();
     strip.actor.add_constraint(new Clutter.BindConstraint({
         source: actor,
         coordinate: Clutter.BindCoordinate.SIZE,
@@ -125,11 +131,12 @@ export function showDockBackdrop(schemes, dash, monitorIndex) {
         if (destroyed)
             return;
         destroyed = true;
-        [global.stage, actor].forEach(o => o.disconnectObject(owner));
+        [global.stage, background, actor].forEach(o => o.disconnectObject(owner));
         strip.destroy();
         actor.destroy();
     };
     global.stage.connectObject('before-paint', follow, owner);
+    background.connectObject('style-changed', fit, owner);
     // Dash-to-dock destroys its docks on some of its settings changes.
     actor.connectObject('destroy', destroy, owner);
 
